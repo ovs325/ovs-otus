@@ -10,44 +10,34 @@ import (
 var ErrInvalidString = errors.New("invalid string")
 
 func Unpack(str string) (string, error) {
-	// На входе пустая строка
-	if str == "" {
+	if str == "" { // На входе пустая строка
 		return "", nil
 	}
-	// последовательность рун
-	runes := []rune(str)
-	// первая руна - число
-	if unicode.IsNumber(runes[0]) {
+	runes := []rune(str)            // последовательность рун
+	if unicode.IsNumber(runes[0]) { // первая руна - число
 		return "", ErrInvalidString
 	}
 	builder := strings.Builder{}
-	// перебор последовательности рун парами
-	for i := 0; i < len(runes)-1; i++ {
-		// Пара число-число
-		if unicode.IsNumber(runes[i]) && unicode.IsNumber(runes[i+1]) {
+	for i := 0; i < len(runes)-1; i++ { // перебор рун парами
+		if unicode.IsNumber(runes[i]) && unicode.IsNumber(runes[i+1]) { // Пара число-число
 			return "", ErrInvalidString
 		}
-		// Пара чило-любая руна
-		if unicode.IsNumber(runes[i]) {
+		if unicode.IsNumber(runes[i]) { // Пара чило-любая руна
 			continue
 		}
-		// Пара символ-число
-		if !unicode.IsNumber(runes[i]) && unicode.IsNumber(runes[i+1]) {
+		if !unicode.IsNumber(runes[i]) && unicode.IsNumber(runes[i+1]) { // Пара символ-число
 			num, err := strconv.Atoi(string(runes[i+1]))
 			if err != nil {
 				return "", ErrInvalidString
 			}
 			builder.WriteString(strings.Repeat(string(runes[i]), num))
 		}
-		// Пара симво-символ
-		if !unicode.IsNumber(runes[i]) && !unicode.IsNumber(runes[i+1]) {
+		if !unicode.IsNumber(runes[i]) && !unicode.IsNumber(runes[i+1]) { // Пара симво-символ
 			builder.WriteString(string(runes[i]))
 		}
 	}
-	// Последняя руна - символ
-	if !unicode.IsNumber(runes[len(runes)-1]) {
+	if !unicode.IsNumber(runes[len(runes)-1]) { // Последняя руна - символ
 		builder.WriteString(string(runes[len(runes)-1]))
 	}
-
 	return builder.String(), nil
 }
