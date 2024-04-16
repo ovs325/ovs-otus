@@ -12,11 +12,7 @@ func Top10(text string) []string {
 	}
 	textMap := make(map[string]int, 0)
 	for _, word := range strings.Fields(text) {
-		if _, ok := textMap[word]; !ok {
-			textMap[word] = 1
-		} else {
-			textMap[word]++
-		}
+		textMap[word]++
 	}
 	words := make([]Word, 0)
 	for key, val := range textMap {
@@ -29,11 +25,11 @@ func Top10(text string) []string {
 		return words[i].Frequency > words[j].Frequency
 	})
 	res := make([]string, 0)
-	for _, word := range words {
+	for i, word := range words {
 		res = append(res, word.Word)
-	}
-	if len(res) > 10 {
-		return res[:10]
+		if i == 9 {
+			break
+		}
 	}
 	return res
 }
