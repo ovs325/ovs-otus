@@ -1,5 +1,7 @@
 package hw04lrucache
 
+import "fmt"
+
 type List interface {
 	Len() int
 	Front() *ListItem
@@ -57,9 +59,9 @@ func (l *list) PushFront(item any) *ListItem {
 	}
 	newElement.Next = l.Front()
 	l.Front().Prev = &newElement
-	newListAny := make([]*ListItem, l.Len()+1)
-	copy(newListAny[1:], l.List)
-	newListAny[0] = &newElement
+	newListAny := make([]*ListItem, 0)
+	newListAny = append(newListAny, &newElement)
+	newListAny = append(newListAny, l.List...)
 	l.List = newListAny
 	return &newElement
 }
@@ -79,32 +81,35 @@ func (l *list) PushBack(item any) *ListItem {
 	return &newElement
 }
 
-// удалить элемент.
-func (l *list) Remove(itemRm *ListItem) {
-	switch itemRm {
-	case nil:
-		return
-	case l.Front():
-		l.List = l.List[1:l.Len()]
-		l.Front().Prev = nil
-		return
-	case l.Back():
-		l.List = l.List[0 : l.Len()-1]
-		l.Back().Next = nil
-		return
-	}
-	for i, item := range l.List {
-		if item.Next == itemRm {
-			listTail := make([]*ListItem, l.Len()-i-2)
-			copy(listTail, l.List[i+2:l.Len()])
-			l.List = l.List[0 : i+1]
-			l.Back().Next = listTail[0]
-			listTail[0].Prev = l.Back()
-			l.List = append(l.List, listTail...)
-			break
-		}
-	}
-}
+// // удалить элемент.
+// func (l *list) Remove(itemRm *ListItem) {
+// 	switch itemRm {
+// 	case nil:
+// 		return
+// 	case l.Back():
+// 		l.List = l.List[0 : l.Len()-1]
+// 		l.Back().Next = nil
+// 		return
+// 	}
+// 	newListAny := make([]*ListItem, 0)
+// 	for i, item := range l.List {
+// 		if item == itemRm {
+// 			if item.Next == nil {
+// 				l.List = newListAny
+// 				break
+// 			}
+// 			l.List[i+1].Prev = itemRm.Prev
+// 			newListAny = append(newListAny, l.List[i+1:l.Len()]...)
+// 			l.List = newListAny
+// 			break
+// 		} else {
+// 			if item.Next == itemRm {
+// 				item.Next = itemRm.Next
+// 			}
+// 			newListAny = append(newListAny, item)
+// 		}
+// 	}
+// }
 
 // переместить элемент в начало.
 func (l *list) MoveToFront(itemMv *ListItem) {
@@ -113,4 +118,39 @@ func (l *list) MoveToFront(itemMv *ListItem) {
 	}
 	l.Remove(itemMv)
 	l.PushFront(itemMv.Value)
+}
+
+// удалить элемент.
+func (l *list) Remove(itemRm *ListItem) {
+	if itemRm == nil {
+		return
+	}
+
+	num := 0
+	ok := GetNum(&num, itemRm, l.Front())
+
+	if !ok {
+		fmt.Println("Не найдено!")
+	}
+
+	newListAny := make([]*ListItem, 0)
+	newListAny = append(newListAny, l.List[0:num]...)
+	newListAny[num-1].Next = itemRm.Next
+	if itemRm.Next != nil {
+		newListAny = append(newListAny, l.List[num+1:l.Len()]...)
+		newListAny[num].Prev = itemRm.Prev
+	}
+	l.List = newListAny
+}
+
+// Функция для поиска места элемента по цепочке ссылок.
+func GetNum(numPoint *int, delItem, item *ListItem) bool {
+	if delItem == item {
+		return true
+	}
+	*numPoint++
+	if item.Next == nil {
+		return false
+	}
+	return GetNum(numPoint, delItem, item.Next)
 }

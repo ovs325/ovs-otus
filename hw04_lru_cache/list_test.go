@@ -1,6 +1,7 @@
 package hw04lrucache
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -47,5 +48,37 @@ func TestList(t *testing.T) {
 			elems = append(elems, i.Value.(int))
 		}
 		require.Equal(t, []int{70, 80, 60, 40, 10, 30, 50}, elems)
+	})
+}
+
+func TestVladislavMass_List(t *testing.T) {
+	t.Run("complex", func(t *testing.T) {
+		l := NewList()
+
+		for i, v := range "VladislavMass" {
+			switch i % 3 {
+			case 0:
+				l.PushFront(string(v))
+			case 1:
+				l.PushBack(string(v))
+			default:
+				l.PushFront(v)
+				l.PushBack(v)
+			}
+		}
+		require.Equal(t, 17, l.Len())
+		str := ""
+		for item := l.Front(); item.Next != nil; item = item.Next {
+			str += fmt.Sprintf("%v", item.Value)
+		}
+		require.Equal(t, str, "s115M118l115d97Vl97i115a118a")
+		for i := 0; i < 8; i++ {
+			l.Remove(l.Back())
+		}
+		str = ""
+		for item := l.Front(); item.Next != nil; item = item.Next {
+			str += fmt.Sprintf("%v", item.Value)
+		}
+		require.Equal(t, str, "s115M118l115d97")
 	})
 }
