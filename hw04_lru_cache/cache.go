@@ -29,8 +29,9 @@ func (c *lruCache) Clear() {
 
 func (c *lruCache) Set(key Key, value interface{}) bool {
 	if item, ok := c.items[key]; ok {
-		item.Value = value
 		c.queue.MoveToFront(item)
+		item.Value = value
+
 		return true
 	}
 	c.items[key] = c.queue.PushFront(value)
