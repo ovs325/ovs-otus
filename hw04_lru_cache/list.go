@@ -19,6 +19,7 @@ type ListItem struct {
 type list struct {
 	firstItem *ListItem
 	lastItem  *ListItem
+	lenList   int
 }
 
 func NewList() List {
@@ -27,12 +28,7 @@ func NewList() List {
 
 // длина списка.
 func (l *list) Len() (num int) {
-	if l.firstItem == nil {
-		return 0
-	}
-	num = 1
-	GetLen(&num, l.firstItem)
-	return
+	return l.lenList
 }
 
 // первый элемент списка.
@@ -51,19 +47,15 @@ func (l *list) PushFront(item any) *ListItem {
 		return nil
 	}
 	newElement := ListItem{Value: item}
-	if l.firstItem == nil {
+	if l.lenList == 0 {
 		l.firstItem = &newElement
-		return l.firstItem
+		l.lastItem = &newElement
+	} else {
+		l.firstItem.Prev = &newElement
+		newElement.Next = l.firstItem
+		l.firstItem = &newElement
 	}
-	newElement.Next = l.firstItem
-	l.firstItem.Prev = &newElement
-	if l.lastItem == nil {
-		l.lastItem = l.firstItem
-	}
-	l.firstItem = &newElement
-	if l.lastItem == nil {
-		l.firstItem = l.firstItem.Next
-	}
+	l.lenList++
 	return l.firstItem
 }
 
@@ -73,19 +65,16 @@ func (l *list) PushBack(item any) *ListItem {
 		l.PushFront(item)
 		return l.firstItem
 	}
-	newElement := ListItem{
-		Value: item,
-	}
-	if l.lastItem == nil {
-		newElement.Prev = l.firstItem
-		l.firstItem.Next = &newElement
+	newElement := ListItem{Value: item}
+	if l.lenList == 0 {
+		l.firstItem = &newElement
 		l.lastItem = &newElement
-		return l.lastItem
+	} else {
+		l.lastItem.Next = &newElement
+		newElement.Prev = l.lastItem
+		l.lastItem = &newElement
 	}
-
-	newElement.Prev = l.lastItem
-	l.lastItem.Next = &newElement
-	l.lastItem = &newElement
+	l.lenList++
 	return l.lastItem
 }
 
@@ -97,50 +86,27 @@ func (l *list) Remove(itemRm *ListItem) {
 	case l.firstItem:
 		l.firstItem = l.firstItem.Next
 		l.firstItem.Prev = nil
-		if l.firstItem.Next == nil {
-			l.lastItem = nil
-		}
 	case l.lastItem:
 		l.lastItem = l.lastItem.Prev
 		l.lastItem.Next = nil
-		if l.lastItem.Prev == nil {
-			l.lastItem = nil
-		}
 	default:
 		itemRm.Prev.Next = itemRm.Next
 		itemRm.Next.Prev = itemRm.Prev
 	}
+	l.lenList--
 }
 
 // переместить элемент в начало.
 func (l *list) MoveToFront(itemMv *ListItem) {
-	if itemMv == nil || l.Front() == itemMv {
+	switch itemMv {
+	case nil, l.firstItem:
 		return
+	default:
+		l.Remove(itemMv)
+		itemMv.Prev = nil
+		l.firstItem.Prev = itemMv
+		itemMv.Next = l.firstItem
+		l.firstItem = itemMv
+		l.lenList++
 	}
-	l.Remove(itemMv)
-	itemMv.Next = l.firstItem
-	itemMv.Prev = nil
-	l.firstItem.Prev = itemMv
-	l.firstItem = itemMv
-	item := GetLast(l.firstItem)
-	if l.firstItem == item {
-		l.lastItem = nil
-	} else {
-		l.lastItem = item
-	}
-}
-
-func GetLen(numPoint *int, item *ListItem) {
-	if item.Next == nil {
-		return
-	}
-	*numPoint++
-	GetLen(numPoint, item.Next)
-}
-
-func GetLast(item *ListItem) (last *ListItem) {
-	if item.Next == nil {
-		return item
-	}
-	return GetLast(item.Next)
 }
