@@ -61,10 +61,6 @@ func (l *list) PushFront(item any) *ListItem {
 
 // добавить значение в конец.
 func (l *list) PushBack(item any) *ListItem {
-	if l.firstItem == nil {
-		l.PushFront(item)
-		return l.firstItem
-	}
 	newElement := ListItem{Value: item}
 	if l.lenList == 0 {
 		l.firstItem = &newElement
@@ -80,14 +76,18 @@ func (l *list) PushBack(item any) *ListItem {
 
 // удалить элемент.
 func (l *list) Remove(itemRm *ListItem) {
+	if l.lenList == 1 && l.firstItem == itemRm {
+		l.firstItem = nil
+		l.lastItem = nil
+		l.lenList = 0
+		return
+	}
 	switch itemRm {
 	case nil:
 		return
 	case l.firstItem:
 		l.firstItem = l.firstItem.Next
-		if l.firstItem != nil {
-			l.firstItem.Prev = nil
-		}
+		l.firstItem.Prev = nil
 	case l.lastItem:
 		l.lastItem = l.lastItem.Prev
 		l.lastItem.Next = nil
