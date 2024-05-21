@@ -85,7 +85,9 @@ func (l *list) Remove(itemRm *ListItem) {
 		return
 	case l.firstItem:
 		l.firstItem = l.firstItem.Next
-		l.firstItem.Prev = nil
+		if l.firstItem != nil {
+			l.firstItem.Prev = nil
+		}
 	case l.lastItem:
 		l.lastItem = l.lastItem.Prev
 		l.lastItem.Next = nil

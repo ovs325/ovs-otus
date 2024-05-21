@@ -27,24 +27,23 @@ func (c *lruCache) Clear() {
 	c.items = make(map[Key]*ListItem, c.capacity)
 }
 
+type ItemVal struct {
+	KeyCache Key
+	ValItem  any
+}
+
 func (c *lruCache) Set(key Key, value interface{}) bool {
 	if item, ok := c.items[key]; ok {
 		c.queue.MoveToFront(item)
-		item.Value = value
-
+		item.Value = ItemVal{KeyCache: key, ValItem: value}
 		return true
 	}
-	c.items[key] = c.queue.PushFront(value)
-	lnn := c.queue.Len()
-	if lnn > c.capacity {
-		toDelItem := c.queue.Back()
-		c.queue.Remove(toDelItem)
-		for key, val := range c.items { // Удаляем ключ из словаря
-			if val == toDelItem {
-				delete(c.items, key)
-			}
-		}
+
+	if c.queue.Len() == c.capacity {
+		delete(c.items, c.queue.Back().Value.(ItemVal).KeyCache)
+		c.queue.Remove(c.queue.Back())
 	}
+	c.items[key] = c.queue.PushFront(ItemVal{KeyCache: key, ValItem: value})
 	return false
 }
 
@@ -52,9 +51,7 @@ func (c *lruCache) Get(key Key) (interface{}, bool) {
 	item, ok := c.items[key]
 	if ok {
 		c.queue.MoveToFront(item)
-		newItem := c.queue.Front()
-		c.items[key] = newItem
-		return newItem.Value, true
+		return item.Value.(ItemVal).ValItem, true
 	}
 	return nil, false
 }
