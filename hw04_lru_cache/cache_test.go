@@ -50,7 +50,57 @@ func TestCache(t *testing.T) {
 	})
 
 	t.Run("purge logic", func(t *testing.T) {
-		// Write me
+		c := NewCache(3)
+
+		ok := c.Set("long-lived", "long-lived")
+		require.False(t, ok)
+		ok = c.Set("mediocre", "mediocre")
+		require.False(t, ok)
+		ok = c.Set("bad", "bad")
+		require.False(t, ok)
+		_, ok = c.Get("long-lived")
+		require.True(t, ok)
+
+		ok = c.Set("good", "good")
+		require.False(t, ok)
+
+		_, ok = c.Get("long-lived")
+		require.True(t, ok)
+		_, ok = c.Get("good")
+		require.True(t, ok)
+		_, ok = c.Get("bad")
+		require.True(t, ok)
+		_, ok = c.Get("mediocre")
+		require.False(t, ok)
+
+		_, ok = c.Get("long-lived")
+		require.True(t, ok)
+		_, ok = c.Get("good")
+		require.True(t, ok)
+		ok = c.Set("new", "new")
+		require.False(t, ok)
+
+		_, ok = c.Get("long-lived")
+		require.True(t, ok)
+		_, ok = c.Get("good")
+		require.True(t, ok)
+		_, ok = c.Get("new")
+		require.True(t, ok)
+		_, ok = c.Get("bad")
+		require.False(t, ok)
+
+		c.Clear()
+
+		_, ok = c.Get("long-lived")
+		require.False(t, ok)
+		_, ok = c.Get("good")
+		require.False(t, ok)
+		_, ok = c.Get("new")
+		require.False(t, ok)
+		_, ok = c.Get("bad")
+		require.False(t, ok)
+		_, ok = c.Get("mediocre")
+		require.False(t, ok)
 	})
 }
 
