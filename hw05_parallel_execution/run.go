@@ -13,7 +13,7 @@ type Task func() error
 
 // Run запускает задачи в n подпрограммах и останавливает свою работу при получении m ошибок от задач.
 func Run(tasks []Task, n, m int) error {
-	if m < 0 || n <= 0 {
+	if m < 0 {
 		return ErrErrorsLimitExceeded
 	}
 	lenTasks := len(tasks)
@@ -46,7 +46,11 @@ func Run(tasks []Task, n, m int) error {
 			}
 		}(ctx)
 	}
-	err := taskLauncher(tasks, taskChan, responseChan, m)
+
+	var err error
+	if n > 0 {
+		err = taskLauncher(tasks, taskChan, responseChan, m)
+	}
 	cancel()
 	wg.Wait()
 	return err

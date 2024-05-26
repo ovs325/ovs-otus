@@ -194,7 +194,7 @@ func TestRun_My(t *testing.T) {
 		maxErrorsCount := 3
 		err := Run(tasks, workersCount, maxErrorsCount)
 
-		require.True(t, errors.Is(err, ErrErrorsLimitExceeded))
+		require.NoError(t, err)
 		require.LessOrEqual(t, runTasksCount, int32(0))
 	})
 }
