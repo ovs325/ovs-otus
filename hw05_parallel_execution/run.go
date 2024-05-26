@@ -24,8 +24,6 @@ func Run(tasks []Task, n, m int) error {
 	defer close(responseChan)
 	taskChan := make(chan Task)
 	defer close(taskChan)
-	fail := 0
-	success := 0
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -47,7 +45,16 @@ func Run(tasks []Task, n, m int) error {
 			}
 		}(ctx)
 	}
+	err := taskLauncher(tasks, taskChan, responseChan, m)
+	cancel()
+	wg.Wait()
+	return err
+}
+
+func taskLauncher(tasks []Task, taskChan chan<- Task, responseChan chan error, m int) error {
+	success := 0
 	taskRun := 1
+	fail := 0
 	taskChan <- tasks[0]
 	tasks = tasks[1:]
 
@@ -61,9 +68,12 @@ func Run(tasks []Task, n, m int) error {
 				fail++
 			}
 			if len(tasks) > 0 && fail < m {
-				taskChan <- tasks[0]
-				tasks = tasks[1:]
-				taskRun++
+				select {
+				case taskChan <- tasks[0]:
+					tasks = tasks[1:]
+					taskRun++
+				default:
+				}
 			}
 		default:
 			if len(tasks) > 0 && fail < m {
@@ -76,8 +86,6 @@ func Run(tasks []Task, n, m int) error {
 			}
 		}
 	}
-	cancel()
-	wg.Wait()
 	if fail >= m {
 		return ErrErrorsLimitExceeded
 	}
