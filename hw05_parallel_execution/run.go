@@ -3,21 +3,12 @@ package hw05parallelexecution
 import (
 	"context"
 	"errors"
+	"sync"
 )
 
 var ErrErrorsLimitExceeded = errors.New("errors limit exceeded")
 
 type Task func() error
-
-var taskLauncher = func(ctx context.Context, tsk Task, tCh chan error) {
-	select {
-	case <-ctx.Done():
-		tCh <- ErrErrorsLimitExceeded
-		return
-	case tCh <- tsk():
-		return
-	}
-}
 
 // Run запускает задачи в n подпрограммах и останавливает свою работу при получении m ошибок от задач.
 func Run(tasks []Task, n, m int) error {
@@ -28,53 +19,66 @@ func Run(tasks []Task, n, m int) error {
 	if lenTasks == 0 {
 		return nil
 	}
-	tChan := make(chan error)
-	exceedErr := 0
-	commonErr := 0
+	var wg sync.WaitGroup
+	responseChan := make(chan error)
+	defer close(responseChan)
+	taskChan := make(chan Task)
+	defer close(taskChan)
+	fail := 0
 	success := 0
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	if lenTasks > n {
-		for _, task := range tasks[:n] {
-			go taskLauncher(ctx, task, tChan)
-		}
-		tasks = tasks[n:]
-	} else {
-		for _, task := range tasks {
-			go taskLauncher(ctx, task, tChan)
-		}
-		tasks = []Task{}
-	}
-
-	for commonErr+success+exceedErr+len(tasks) < lenTasks {
-		select {
-		case res := <-tChan:
-			if res != nil {
-				if errors.Is(res, ErrErrorsLimitExceeded) {
-					exceedErr++
-					continue
+	for i := 0; i < n; i++ {
+		wg.Add(1)
+		go func(ctx context.Context) {
+			defer wg.Done()
+			for {
+				select {
+				case <-ctx.Done():
+					return
+				case task := <-taskChan:
+					select {
+					case <-ctx.Done():
+						return
+					case responseChan <- task():
+					}
 				}
-				commonErr++
-				if commonErr >= m {
-					cancel()
-					continue
-				}
-				if len(tasks) > 0 {
-					go taskLauncher(ctx, tasks[0], tChan)
-					tasks = tasks[1:]
-				}
-				continue
 			}
-			success++
-			if len(tasks) > 0 {
-				go taskLauncher(ctx, tasks[0], tChan)
+		}(ctx)
+	}
+	taskRun := 1
+	taskChan <- tasks[0]
+	tasks = tasks[1:]
+
+	for fail+success < taskRun {
+		select {
+		case res := <-responseChan:
+			switch res {
+			case nil:
+				success++
+			default:
+				fail++
+			}
+			if len(tasks) > 0 && fail < m {
+				taskChan <- tasks[0]
 				tasks = tasks[1:]
+				taskRun++
 			}
 		default:
+			if len(tasks) > 0 && fail < m {
+				select {
+				case taskChan <- tasks[0]:
+					tasks = tasks[1:]
+					taskRun++
+				default:
+				}
+			}
 		}
 	}
-	if commonErr >= m {
+	cancel()
+	wg.Wait()
+	if fail >= m {
 		return ErrErrorsLimitExceeded
 	}
 	return nil
