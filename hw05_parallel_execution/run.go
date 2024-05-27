@@ -3,7 +3,6 @@ package hw05parallelexecution
 import (
 	"context"
 	"errors"
-	"runtime"
 	"sync"
 )
 
@@ -62,8 +61,8 @@ func taskLauncher(tasks []Task, taskChan chan<- Task, responseChan chan error, m
 	fail := 0
 	taskChan <- tasks[0]
 	tasks = tasks[1:]
-
-	for fail+success < taskRun {
+	// Запускаем задачи и считываем тезультат
+	for fail+success < taskRun && len(tasks) > 0 && fail < m {
 		select {
 		case res := <-responseChan:
 			switch res {
@@ -72,18 +71,19 @@ func taskLauncher(tasks []Task, taskChan chan<- Task, responseChan chan error, m
 			default:
 				fail++
 			}
+		case taskChan <- tasks[0]:
+			tasks = tasks[1:]
+			taskRun++
+		}
+	}
+	// Дочитываем запущенные задачи
+	for fail+success < taskRun {
+		res := <-responseChan
+		switch res {
+		case nil:
+			success++
 		default:
-			if len(tasks) > 0 && fail < m {
-				select {
-				case taskChan <- tasks[0]:
-					tasks = tasks[1:]
-					taskRun++
-				default:
-					runtime.Gosched()
-				}
-			} else {
-				runtime.Gosched()
-			}
+			fail++
 		}
 	}
 	if fail >= m {
