@@ -46,46 +46,26 @@ func Run(tasks []Task, n, m int) error {
 		}(ctx)
 	}
 
-	var err error
-	if n > 0 {
-		err = taskLauncher(tasks, taskChan, responseChan, m)
+	fail := 0
+	if n > 0 { // Запускаем задачи и считываем тезультат
+		success := 0
+		taskChan <- tasks[0]
+		taskRun := 1
+		for fail < m && fail+success < taskRun && taskRun < len(tasks) {
+			select {
+			case res := <-responseChan:
+				if res == nil {
+					success++
+					continue
+				}
+				fail++
+			case taskChan <- tasks[taskRun]:
+				taskRun++
+			}
+		}
 	}
 	cancel()
 	wg.Wait()
-	return err
-}
-
-func taskLauncher(tasks []Task, taskChan chan<- Task, responseChan chan error, m int) error {
-	success := 0
-	taskRun := 1
-	fail := 0
-	taskChan <- tasks[0]
-	tasks = tasks[1:]
-	// Запускаем задачи и считываем тезультат
-	for fail+success < taskRun && len(tasks) > 0 && fail < m {
-		select {
-		case res := <-responseChan:
-			switch res {
-			case nil:
-				success++
-			default:
-				fail++
-			}
-		case taskChan <- tasks[0]:
-			tasks = tasks[1:]
-			taskRun++
-		}
-	}
-	// Дочитываем запущенные задачи
-	for fail+success < taskRun {
-		res := <-responseChan
-		switch res {
-		case nil:
-			success++
-		default:
-			fail++
-		}
-	}
 	if fail >= m {
 		return ErrErrorsLimitExceeded
 	}
