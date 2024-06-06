@@ -21,25 +21,29 @@ func Pipeline(in In, stages ...Stage) Out {
 }
 
 func ExecutePipeline(in In, done In, stages ...Stage) Out {
-
 	var wg sync.WaitGroup
 	out := make(Bi)
 
-	for data := range Pipeline(in, stages...) {
-		select {
-		case <-done:
-			close(out)
-			return out
-		default:
-			wg.Add(1)
-			go func(sendData any) {
-				select {
-				case out <- sendData:
-					wg.Done()
-				case <-done:
-				}
-			}(data)
+	for {
+		data, ok := <-in
+		if !ok {
+			break
 		}
+		wg.Add(1)
+		toPipe := make(Bi)
+
+		go func() {
+			select {
+			case <-done:
+				wg.Done()
+				return
+			case res := <-Pipeline(toPipe, stages...):
+				out <- res
+			}
+			wg.Done()
+		}()
+		toPipe <- data
+		close(toPipe)
 	}
 
 	go func() {
