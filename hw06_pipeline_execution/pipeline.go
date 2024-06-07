@@ -59,26 +59,25 @@ func ExecutePipeline(in In, done In, stages ...Stage) Out {
 			break
 		}
 		wg.Add(1)
-		toPipe := make(Bi)
 
 		go func(n int) {
-			isSend := true
-			var res any
-			select {
-			case <-done:
-				isSend = false
-			case res = <-StagesChaine(toPipe, stages...):
+			results := make([]any, len(stages)+1)
+			results[0] = data
+			for m, stage := range stages {
+				toStage := make(Bi)
+				go func(mm int) {
+					toStage <- results[mm]
+				}(m)
+				val, ok := <-stage(toStage)
+				if ok {
+					results[m+1] = val
+				}
+				close(toStage)
 			}
-			if isSend {
-				fromCh <- FromCh{num: n, data: res}
-			}
+			fromCh <- FromCh{num: n, data: results[len(stages)]}
+
 			wg.Done()
 		}(i)
-		select {
-		case <-done:
-		case toPipe <- data:
-		}
-		close(toPipe)
 		i++
 	}
 
