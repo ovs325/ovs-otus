@@ -63,19 +63,25 @@ func ExecutePipeline(in In, done In, stages ...Stage) Out {
 		go func(n int) {
 			results := make([]any, len(stages)+1)
 			results[0] = data
+			mu := &sync.Mutex{} // создаем мьютекс
 			for m, stage := range stages {
 				toStage := make(Bi)
 				go func(mm int) {
+					mu.Lock() // блокируем доступ к results
 					toStage <- results[mm]
+					mu.Unlock() // разблокируем доступ к results
 				}(m)
 				val, ok := <-stage(toStage)
 				if ok {
+					mu.Lock() // блокируем доступ к results
 					results[m+1] = val
+					mu.Unlock() // разблокируем доступ к results
 				}
 				close(toStage)
 			}
+			mu.Lock() // блокируем доступ к results
 			fromCh <- FromCh{num: n, data: results[len(stages)]}
-
+			mu.Unlock() // разблокируем доступ к results
 			wg.Done()
 		}(i)
 		i++
