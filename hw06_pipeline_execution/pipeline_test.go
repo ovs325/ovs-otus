@@ -110,7 +110,7 @@ func Test_My_Strings(t *testing.T) {
 
 	stages := []Stage{
 		g("Empty", func(v interface{}) interface{} { return v }),
-		g("First Half", func(v interface{}) interface{} { return v.(string)[:int(len(v.(string))/2)] }),
+		g("First Half", func(v interface{}) interface{} { return v.(string)[:len(v.(string))/2] }),
 	}
 
 	t.Run("simple case", func(t *testing.T) {
