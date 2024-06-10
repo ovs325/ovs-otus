@@ -1,8 +1,6 @@
 package hw06pipelineexecution
 
-import (
-	"sync"
-)
+import "sync"
 
 type (
 	In  = <-chan interface{}
@@ -20,76 +18,106 @@ func StagesChaine(in In, stages ...Stage) Out {
 	return pipeOut
 }
 
-type FromCh struct {
-	num  int
-	data any
+type FromStage struct {
+	numData int
+	data    any
+}
+
+func withNum(inCh In, num int) any {
+	for res := range inCh {
+		return FromStage{
+			numData: num,
+			data:    res,
+		}
+	}
+	return FromStage{}
 }
 
 func ExecutePipeline(in In, done In, stages ...Stage) Out {
-	var wg sync.WaitGroup
+	chList := make([]Bi, len(stages)+1)
+	// Слайс каналов, для автопостройки Pipeline
+	for i := 0; i < len(stages); i++ {
+		chList[i] = make(Bi)
+	}
+	chList[len(stages)] = make(Bi)
+
 	out := make(Bi)
-
-	fromCh := make(Bi)
-
+	var num int
+	var mu sync.Mutex
+	dataList := make(map[int]any)
+	// Горутина для сортировки исходных данных
 	go func() {
-		dataList := map[int]any{}
 		for {
 			select {
 			case <-done:
+				mu.Lock()
+				for i := 0; i < len(dataList); i++ {
+					out <- dataList[i]
+				}
+				mu.Unlock()
 				close(out)
 				return
-			case res, ok := <-fromCh:
+			case resNum, ok := <-chList[len(stages)]:
 				if !ok {
+					mu.Lock()
 					for i := 0; i < len(dataList); i++ {
 						out <- dataList[i]
 					}
+					mu.Unlock()
 					close(out)
 					return
 				}
-				item := res.(FromCh)
-				dataList[item.num] = item.data
+				res := resNum.(FromStage)
+				mu.Lock()
+				dataList[res.numData] = res.data
+				if len(dataList) == num {
+					for _, ch := range chList {
+						close(ch)
+					}
+				}
+				mu.Unlock()
 			}
 		}
 	}()
+	// Горутины для работы со Stage-ами
+	StRanner(stages, chList, done)
 
-	i := 0
-	for {
-		data, ok := <-in
-		if !ok {
-			break
+	// Горутина для нумерации входных данных
+	go func() {
+		for data := range in {
+			mu.Lock()
+			chList[0] <- FromStage{
+				numData: num,
+				data:    data,
+			}
+			num++
+			mu.Unlock()
 		}
-		wg.Add(1)
+	}()
+	return out
+}
 
-		go func(n int) {
-			results := make([]any, len(stages)+1)
-			results[0] = data
-			mu := &sync.Mutex{}
-			for m, stage := range stages {
+// Горутины для работы со Stage-ами.
+func StRanner(stages []Stage, chList []chan any, done In) {
+	for i, stage := range stages {
+		go func(numCh int, stage Stage) {
+			for {
 				toStage := make(Bi)
-				go func(mm int) {
-					mu.Lock()
-					toStage <- results[mm]
-					mu.Unlock()
-				}(m)
-				val, ok := <-stage(toStage)
-				if ok {
-					mu.Lock()
-					results[m+1] = val
-					mu.Unlock()
+				select {
+				case itemNum, ok := <-chList[numCh]:
+					if ok {
+						item := itemNum.(FromStage)
+						go func() {
+							chList[numCh+1] <- withNum(stage(toStage), item.numData)
+						}()
+						toStage <- item.data
+					}
+				case <-done:
+					close(toStage)
+					return
 				}
 				close(toStage)
 			}
-			mu.Lock()
-			fromCh <- FromCh{num: n, data: results[len(stages)]}
-			mu.Unlock()
-			wg.Done()
-		}(i)
-		i++
+		}(i, stage)
 	}
-
-	go func() {
-		wg.Wait()
-		close(fromCh)
-	}()
-	return out
 }
