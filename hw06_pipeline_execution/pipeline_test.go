@@ -91,3 +91,50 @@ func TestPipeline(t *testing.T) {
 		require.Less(t, int64(elapsed), int64(abortDur)+int64(fault))
 	})
 }
+
+func Test_My_Strings(t *testing.T) {
+	// Stage generator
+	g := func(_ string, f func(v interface{}) interface{}) Stage {
+		return func(in In) Out {
+			out := make(Bi)
+			go func() {
+				defer close(out)
+				for v := range in {
+					time.Sleep(sleepPerStage)
+					out <- f(v)
+				}
+			}()
+			return out
+		}
+	}
+
+	stages := []Stage{
+		g("Empty", func(v interface{}) interface{} { return v }),
+		g("First Half", func(v interface{}) interface{} { return v.(string)[:len(v.(string))/2] }),
+	}
+
+	t.Run("simple case", func(t *testing.T) {
+		in := make(Bi)
+		data := []string{
+			"Damn near half of you guys in here pull compensation",
+			"One way out of this dilemma is to run some tests with the race detector enabled",
+		}
+
+		go func() {
+			for _, v := range data {
+				in <- v
+			}
+			close(in)
+		}()
+
+		result := make([]string, 0, 10)
+		for s := range ExecutePipeline(in, nil, stages...) {
+			result = append(result, s.(string))
+		}
+
+		require.Equal(t, []string{
+			"Damn near half of you guys",
+			"One way out of this dilemma is to run s",
+		}, result)
+	})
+}
