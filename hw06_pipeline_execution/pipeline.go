@@ -10,20 +10,115 @@ type (
 
 type Stage func(in In) (out Out)
 
-func StagesChaine(in In, stages ...Stage) Out {
-	pipeOut := in
-	for _, stage := range stages {
-		pipeOut = stage(pipeOut)
-	}
-	return pipeOut
-}
-
 type FromStage struct {
 	numData int
 	data    any
 }
 
-func withNum(inCh In, num int) any {
+func ExecutePipeline(in In, done In, stages ...Stage) Out {
+	out := make(Bi)
+	var num int
+	var mu sync.Mutex
+	// Слайс каналов, для автопостройки Pipeline
+	chList := getChList(len(stages) + 1)
+	// Сортировщик и Closer
+	go closer(chList, out, done, &mu, &num)
+	// Pipeline - Запуск цепочки Stages
+	pipeline(stages, chList, done)
+	// Горутина для нумерации входных данных
+	go numeratorIn(chList, in, &mu, &num)
+	return out
+}
+
+// Отдаёт слайс каналов.
+func getChList(num int) []Bi {
+	chList := make([]Bi, num)
+	// Слайс каналов, для автопостройки Pipeline
+	for i := 0; i < num; i++ {
+		chList[i] = make(Bi)
+	}
+	return chList
+}
+
+// Ф-ция, скидывающая сортированные данные в выходной канал out
+// и закрывающая все остальные каналы горутин для закрытия их самих.
+func closer(chList []Bi, out Bi, done Out, mu *sync.Mutex, num *int) {
+	dataList := make(map[int]any)
+	for {
+		select {
+		case <-done:
+			mu.Lock()
+			sortDataSender(dataList, out)
+			mu.Unlock()
+			return
+		case resNum, ok := <-chList[len(chList)-1]:
+			if !ok {
+				mu.Lock()
+				sortDataSender(dataList, out)
+				mu.Unlock()
+				return
+			}
+			res := resNum.(FromStage)
+			mu.Lock()
+			dataList[res.numData] = res.data
+			if len(dataList) == *num {
+				// закрываем все каналы горутин (сами горутины)
+				channelsCloser(chList)
+			}
+			mu.Unlock()
+		}
+	}
+}
+
+// Отправка итогового результата в out-канал.
+func sortDataSender(dataList map[int]any, out Bi) {
+	for i := 0; i < len(dataList); i++ {
+		out <- dataList[i]
+	}
+	close(out)
+}
+
+// Гаситель каналов.
+func channelsCloser(chList []Bi) {
+	for _, ch := range chList {
+		close(ch)
+	}
+}
+
+// Запуск списка Stage-й.
+func pipeline(stages []Stage, chList []chan any, done In) {
+	for i, stage := range stages {
+		go stageRun(i, stage, chList, done)
+	}
+}
+
+// Запуск Stage.
+func stageRun(numCh int, stage Stage, chList []chan any, done In) {
+	for {
+		toStage := make(Bi)
+		select {
+		case itemNum, ok := <-chList[numCh]:
+			if ok {
+				item := itemNum.(FromStage)
+				go stageHandler(chList[numCh+1], stage(toStage), item.numData)
+				toStage <- item.data
+			}
+		case <-done:
+			// Закрываем внешнюю горутину Stage-а
+			close(toStage)
+			return
+		}
+		close(toStage)
+	}
+}
+
+// Сброс нумерованных данных, полученных из Stage, в выходной канал.
+func stageHandler(ch Bi, chOut Out, num int) {
+	ch <- addNum(chOut, num)
+}
+
+// нумерует выходные данные Stages.
+func addNum(inCh In, num int) any {
 	for res := range inCh {
 		return FromStage{
 			numData: num,
@@ -33,91 +128,15 @@ func withNum(inCh In, num int) any {
 	return FromStage{}
 }
 
-func ExecutePipeline(in In, done In, stages ...Stage) Out {
-	chList := make([]Bi, len(stages)+1)
-	// Слайс каналов, для автопостройки Pipeline
-	for i := 0; i < len(stages); i++ {
-		chList[i] = make(Bi)
-	}
-	chList[len(stages)] = make(Bi)
-
-	out := make(Bi)
-	var num int
-	var mu sync.Mutex
-	dataList := make(map[int]any)
-	// Горутина для сортировки исходных данных
-	go func() {
-		for {
-			select {
-			case <-done:
-				mu.Lock()
-				for i := 0; i < len(dataList); i++ {
-					out <- dataList[i]
-				}
-				mu.Unlock()
-				close(out)
-				return
-			case resNum, ok := <-chList[len(stages)]:
-				if !ok {
-					mu.Lock()
-					for i := 0; i < len(dataList); i++ {
-						out <- dataList[i]
-					}
-					mu.Unlock()
-					close(out)
-					return
-				}
-				res := resNum.(FromStage)
-				mu.Lock()
-				dataList[res.numData] = res.data
-				if len(dataList) == num {
-					for _, ch := range chList {
-						close(ch)
-					}
-				}
-				mu.Unlock()
-			}
+// Нумератор порядка входных данных, поступающих на вход Pipeline.
+func numeratorIn(chList []Bi, in In, mu *sync.Mutex, num *int) {
+	for data := range in {
+		mu.Lock()
+		chList[0] <- FromStage{
+			numData: *num,
+			data:    data,
 		}
-	}()
-	// Горутины для работы со Stage-ами
-	StRanner(stages, chList, done)
-
-	// Горутина для нумерации входных данных
-	go func() {
-		for data := range in {
-			mu.Lock()
-			chList[0] <- FromStage{
-				numData: num,
-				data:    data,
-			}
-			num++
-			mu.Unlock()
-		}
-	}()
-	return out
-}
-
-// Горутины для работы со Stage-ами.
-func StRanner(stages []Stage, chList []chan any, done In) {
-	for i, stage := range stages {
-		go func(numCh int, stage Stage) {
-			for {
-				toStage := make(Bi)
-				select {
-				case itemNum, ok := <-chList[numCh]:
-					if ok {
-						item := itemNum.(FromStage)
-						go func() {
-							chList[numCh+1] <- withNum(stage(toStage), item.numData)
-						}()
-						toStage <- item.data
-					}
-				case <-done:
-					close(toStage)
-					return
-				}
-				close(toStage)
-			}
-		}(i, stage)
+		*num++
+		mu.Unlock()
 	}
 }
