@@ -17,13 +17,9 @@ var (
 )
 
 func Copy(fromPath, toPath string, offset, limit int64) error {
-	bar := progressbar.Default(7)
 	fromPath = filepath.Clean(fromPath)
 	toPath = filepath.Clean(toPath)
-	bar.Add(1)
-
 	size, err := IsSrcValid(fromPath)
-	bar.Add(1)
 	if err != nil {
 		return err
 	}
@@ -36,15 +32,12 @@ func Copy(fromPath, toPath string, offset, limit int64) error {
 	if offset+limit > size || limit == 0 {
 		limit = size - offset
 	}
-	bar.Add(1)
 	// Открытие файла-источника
 	fromFile, err := os.OpenFile(fromPath, os.O_RDWR, 0o666)
 	if err != nil {
 		return fmt.Errorf("не удалось открыть файл-источник %s: %s", fromPath, err.Error())
 	}
 	defer fromFile.Close()
-	bar.Add(1)
-	fromFile.Seek(offset, io.SeekStart)
 	// Открытие файла-приёмника
 	var toFile *os.File
 	var dir, name string
@@ -65,27 +58,56 @@ func Copy(fromPath, toPath string, offset, limit int64) error {
 			return fmt.Errorf("не удалось открыть файл-приемник %s: %s", toPath, err.Error())
 		}
 	}
-	bar.Add(1)
-	if err = Copier(toFile, fromFile, limit); err != nil {
+	fromFile.Seek(offset, io.SeekStart)
+	if err = Copier(toFile, fromFile, offset, limit); err != nil {
 		toFile.Close()
 		return err
 	}
-	bar.Add(1)
 	if toPath == fromPath { // перезаписываем исходный файл
 		if err := Renamer(toFile, toPath); err != nil {
 			return err
 		}
 	}
-	bar.Add(1)
 	return nil
 }
 
-func Copier(dst, src *os.File, limit int64) (err error) {
-	_, err = io.CopyN(dst, src, limit)
-	if err != nil {
-		return fmt.Errorf("операция копирования не удалась: %s", err.Error())
+func Copier(dst, src *os.File, offsetStart, limit int64) (err error) {
+	var lenBuf int
+	switch {
+	case limit <= 10:
+		lenBuf = 1
+	case limit > 10 && limit <= 1000:
+		lenBuf = int(limit) / 10
+	case limit > 1000:
+		lenBuf = 1024
 	}
-	return
+	buf := make([]byte, lenBuf)
+	bar := progressbar.Default(limit / int64(lenBuf))
+	count := int64(0)
+	offset := int64(0)
+
+	for {
+		count++
+		bar.Add64(1)
+		n, err := src.ReadAt(buf, offset+offsetStart)
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				_, _ = dst.WriteAt(buf[:n], offset)
+				bar.Add64((limit / int64(lenBuf)) - count)
+				return nil
+			}
+			return fmt.Errorf("операция чтения не удалась: %s", err.Error())
+		}
+		_, err = dst.WriteAt(buf[:n], offset)
+		offset += int64(n)
+		if err != nil {
+			return fmt.Errorf("операция записи не удалась: %s", err.Error())
+		}
+		if offset >= limit {
+			bar.Add64((limit / int64(lenBuf)) - count)
+			return nil
+		}
+	}
 }
 
 func IsSrcValid(fromPath string) (size int64, err error) {
