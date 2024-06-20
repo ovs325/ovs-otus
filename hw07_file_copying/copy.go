@@ -74,18 +74,15 @@ func Copy(fromPath, toPath string, offset, limit int64) error {
 func Copier(dst, src *os.File, offsetStart, limit int64) (err error) {
 	var lenBuf int
 	switch {
-	case limit <= 10:
+	case limit < 100:
 		lenBuf = 1
-	case limit > 10 && limit <= 1000:
-		lenBuf = int(limit) / 10
-	case limit > 1000:
-		lenBuf = 1024
+	case limit > 100:
+		lenBuf = int(limit) / 100
 	}
 	buf := make([]byte, lenBuf)
 	bar := progressbar.Default(limit / int64(lenBuf))
 	count := int64(0)
 	offset := int64(0)
-
 	for {
 		count++
 		bar.Add64(1)
