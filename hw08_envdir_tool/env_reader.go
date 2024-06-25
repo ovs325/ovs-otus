@@ -43,10 +43,13 @@ func GetEnvVar(path string) (string, bool, error) {
 	if err != nil {
 		return "", false, err
 	}
+
+	data = bytes.SplitN(data, []byte{'\n'}, 2)[0]
+
 	text := string(bytes.ReplaceAll(data, []byte{0x00}, []byte{'\n'}))
 	text = strings.TrimRight(text, " \t")
 	if text == "" {
 		return "", true, nil
 	}
-	return strings.SplitN(text, "\n", 2)[0], false, nil
+	return text, false, nil
 }

@@ -31,11 +31,11 @@ func TestRunCmd(t *testing.T) {
 						NeedRemove: false,
 					},
 					"EMPTY": EnvValue{
-						Value:      " ",
-						NeedRemove: false,
+						Value:      "",
+						NeedRemove: true,
 					},
 					"FOO": EnvValue{
-						Value:      "   foo",
+						Value:      "   foo\nwith new line",
 						NeedRemove: false,
 					},
 					"HELLO": EnvValue{

@@ -11,9 +11,8 @@ import (
 func RunCmd(cmd []string, env Environment) (returnCode int) {
 	envList := make([]string, 0, len(env))
 	for name, value := range env {
-		if value.NeedRemove {
-			envList = append(envList, fmt.Sprintf("unset %s", name))
-		} else {
+		os.Unsetenv(name)
+		if !value.NeedRemove {
 			envList = append(envList, fmt.Sprintf("%s=%s", name, value.Value))
 		}
 	}

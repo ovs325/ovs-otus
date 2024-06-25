@@ -39,8 +39,8 @@ func TestGetEnvVar(t *testing.T) {
 				path: "./testdata/env/EMPTY",
 			},
 			expected: ExpectedGetEnvVar{
-				str:   " ",
-				idDel: false,
+				str:   "",
+				idDel: true,
 				err:   error(nil),
 			},
 		},
@@ -50,7 +50,7 @@ func TestGetEnvVar(t *testing.T) {
 				path: "./testdata/env/FOO",
 			},
 			expected: ExpectedGetEnvVar{
-				str:   "   foo",
+				str:   "   foo\nwith new line",
 				idDel: false,
 				err:   error(nil),
 			},
@@ -116,11 +116,11 @@ func TestReadDir(t *testing.T) {
 						NeedRemove: false,
 					},
 					"EMPTY": EnvValue{
-						Value:      " ",
-						NeedRemove: false,
+						Value:      "",
+						NeedRemove: true,
 					},
 					"FOO": EnvValue{
-						Value:      "   foo",
+						Value:      "   foo\nwith new line",
 						NeedRemove: false,
 					},
 					"HELLO": EnvValue{
