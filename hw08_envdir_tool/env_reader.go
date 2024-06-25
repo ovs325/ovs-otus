@@ -27,6 +27,9 @@ func ReadDir(dir string) (Environment, error) {
 	for _, file := range files {
 		if !file.IsDir() {
 			name := file.Name()
+			if strings.ContainsAny(name, "=") {
+				continue
+			}
 			firstStr, needRemove, err := GetEnvVar(filepath.Join(dir, name))
 			if err != nil {
 				return nil, err
