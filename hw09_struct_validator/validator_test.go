@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 type UserRole string
@@ -42,10 +44,22 @@ func TestValidate(t *testing.T) {
 		expectedErr error
 	}{
 		{
-			// Place your code here.
+			in: User{
+				ID:     "123456789012345678901234567890123456",
+				Name:   "test",
+				Age:    20,
+				Email:  "tea@bk.ru",
+				Role:   "admin",
+				Phones: []string{"79605025555", "9621620101"},
+				meta:   json.RawMessage([]byte("Странное сообщение")),
+			},
+			expectedErr: ValidationErrors{
+				{
+					Field: "Phones",
+					Err:   fmt.Errorf("длинна должна быть 11"),
+				},
+			},
 		},
-		// ...
-		// Place your code here.
 	}
 
 	for i, tt := range tests {
@@ -53,8 +67,9 @@ func TestValidate(t *testing.T) {
 			tt := tt
 			t.Parallel()
 
-			// Place your code here.
-			_ = tt
+			errRes := Validate(tt.in)
+			assert.Equal(t, errRes, tt.expectedErr)
+
 		})
 	}
 }
