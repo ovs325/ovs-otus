@@ -1,7 +1,63 @@
 package main
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+)
+
+type ParamsRunCmd struct {
+	cmd []string
+	env Environment
+}
+
+type ExpectedRunCmd struct {
+	code int
+}
 
 func TestRunCmd(t *testing.T) {
-	// Place your code here
+	cases := []struct {
+		name     string
+		params   ParamsRunCmd
+		expected ExpectedRunCmd
+	}{
+		{
+			name: "_Ok",
+			params: ParamsRunCmd{
+				cmd: []string{"ls", "-l", "-a"},
+				env: Environment{
+					"BAR": EnvValue{
+						Value:      "bar",
+						NeedRemove: false,
+					},
+					"EMPTY": EnvValue{
+						Value:      "",
+						NeedRemove: true,
+					},
+					"FOO": EnvValue{
+						Value:      "   foo\nwith new line",
+						NeedRemove: false,
+					},
+					"HELLO": EnvValue{
+						Value:      `"hello"`,
+						NeedRemove: false,
+					},
+					"UNSET": EnvValue{
+						Value:      "",
+						NeedRemove: true,
+					},
+				},
+			},
+			expected: ExpectedRunCmd{
+				code: 0,
+			},
+		},
+	}
+
+	for _, cs := range cases {
+		t.Run(cs.name, func(t *testing.T) {
+			codeRes := RunCmd(cs.params.cmd, cs.params.env)
+			assert.Equal(t, codeRes, cs.expected.code)
+		})
+	}
 }
