@@ -16,17 +16,17 @@ type ValidationError struct {
 type ValidationErrors []ValidationError
 
 func (v ValidationErrors) Error() string {
-	var errors []string
+	errs := make([]string, 0, len(v))
 	for _, err := range v {
-		errors = append(errors, fmt.Sprintf("%s: %s", err.Field, err.Err.Error()))
+		errs = append(errs, fmt.Sprintf("%s: %s", err.Field, err.Err.Error()))
 	}
-	return strings.Join(errors, ", ")
+	return strings.Join(errs, ", ")
 }
 
 func Validate(v interface{}) error {
 	val := rf.ValueOf(v)
 	if val.Kind() != rf.Struct {
-		return fmt.Errorf("ожидалась структура, получена %s", val.Kind())
+		return fmt.Errorf("ожидалась структура, получена %v", val.Kind())
 	}
 	if val.Kind() == rf.Ptr {
 		val = val.Elem()
@@ -41,33 +41,48 @@ func Validate(v interface{}) error {
 		if text = field.Tag.Get("validate"); text == "" {
 			continue
 		}
-
-		validatorsList := strings.Split(text, "|")
-		for _, item := range validatorsList {
-			parts := strings.SplitN(item, ":", 2)
-			if len(parts) != 2 {
-				appErr(&errors, field.Name, "плохой валидатор", item)
-				continue
-			}
-			validType, validValue := parts[0], parts[1]
-			switch validType {
-			case "len":
-				len_(validValue, value, field, &errors)
-			case "min":
-				min_(validValue, value, field, &errors)
-			case "max":
-				max_(validValue, value, field, &errors)
-			case "regexp":
-				regexp_(validValue, value, field, &errors)
-			case "in":
-				in_(validValue, value, field, &errors)
-			default:
-				appErr(&errors, field.Name, "неизвестный валидатор", validType)
-			}
+		if err := verification(text, value, field, &errors); err != nil {
+			return fmt.Errorf("процесс проверки завершился ошибкой: %w", err)
 		}
 	}
 	if len(errors) > 0 {
 		return errors
+	}
+	return nil
+}
+
+func verification(text string, value rf.Value, field rf.StructField, errors *ValidationErrors) error {
+	validatorsList := strings.Split(text, "|")
+	for _, item := range validatorsList {
+		parts := strings.SplitN(item, ":", 2)
+		if len(parts) != 2 {
+			return fmt.Errorf("инвалидный валидатор: %s", item)
+		}
+		validType, validValue := parts[0], parts[1]
+		switch validType {
+		case "len":
+			if err := lenV(validValue, value, field, errors); err != nil {
+				return err
+			}
+		case "min":
+			if err := minV(validValue, value, field, errors); err != nil {
+				return err
+			}
+		case "max":
+			if err := maxV(validValue, value, field, errors); err != nil {
+				return err
+			}
+		case "regexp":
+			if err := regexpV(validValue, value, field, errors); err != nil {
+				return err
+			}
+		case "in":
+			if err := inV(validValue, value, field, errors); err != nil {
+				return err
+			}
+		default:
+			return fmt.Errorf("неизвестный валидатор: %v", validType)
+		}
 	}
 	return nil
 }
@@ -80,65 +95,92 @@ func mustAtoi(s string) int {
 	return i
 }
 
-func len_(validValue string, value rf.Value, field rf.StructField, errors *ValidationErrors) {
+func lenV(validValue string, value rf.Value, field rf.StructField, errors *ValidationErrors) error {
 	length, _ := strconv.Atoi(validValue)
-	switch value.Kind() {
+	vs := value.String()
+	vl := value.Len()
+	_ = vs
+	switch value.Kind() { // nolint:exhaustive,nolintlint
 	case rf.String:
-		if value.Len() != length {
-			appErr(errors, field.Name, "длинна должна быть", length)
+		if vl != length {
+			AppErr(errors, field.Name, "длинна должна быть = ", length)
 		}
 	case rf.Slice:
-		if value.Len() != length {
-			appErr(errors, field.Name, "длинна должна быть", length)
+		for i := 0; i < value.Len(); i++ {
+			if value.Index(i).Len() != length {
+				msg := fmt.Sprintf("длина элемента %d должна быть = ", i)
+				AppErr(errors, field.Name, msg, length)
+			}
 		}
 	default:
-		appErr(errors, field.Name, "неправильный тип 'len' валидатора", value.Kind())
+		return fmt.Errorf("неправильный тип 'min' валидатора: %v", value.Kind())
 	}
+	return nil
 }
 
-func min_(validValue string, value rf.Value, field rf.StructField, errors *ValidationErrors) {
+func minV(validValue string, value rf.Value, field rf.StructField, errors *ValidationErrors) error {
 	min, _ := strconv.Atoi(validValue)
-	switch value.Kind() {
+	switch value.Kind() { // nolint:exhaustive,nolintlint
 	case rf.Int:
 		if value.Int() < int64(min) {
-			appErr(errors, field.Name, "должно быть хотя бы", min)
+			AppErr(errors, field.Name, "должно быть не менее ", min)
+		}
+	case rf.Slice:
+		for i := 0; i < value.Len(); i++ {
+			if value.Index(i).Int() < int64(min) {
+				AppErr(errors, field.Name, fmt.Sprintf("элемент %d должен быть не менее ", i), min)
+			}
 		}
 	default:
-		appErr(errors, field.Name, "неправильный тип 'min' валидатора", value.Kind())
+		return fmt.Errorf("неправильный тип 'min' валидатора: %v", value.Kind())
 	}
+	return nil
 }
 
-func max_(validValue string, value rf.Value, field rf.StructField, errors *ValidationErrors) {
+func maxV(validValue string, value rf.Value, field rf.StructField, errors *ValidationErrors) error {
 	max, _ := strconv.Atoi(validValue)
-	switch value.Kind() {
+	switch value.Kind() { // nolint:exhaustive,nolintlint
 	case rf.Int:
 		if value.Int() > int64(max) {
-			appErr(errors, field.Name, "должно быть, не более", max)
+			AppErr(errors, field.Name, "должно быть, не более ", max)
+		}
+	case rf.Slice:
+		for i := 0; i < value.Len(); i++ {
+			if value.Index(i).Int() > int64(max) {
+				AppErr(errors, field.Name, fmt.Sprintf("элемент %d должен быть, не более ", i), max)
+			}
 		}
 	default:
-		appErr(errors, field.Name, "неправильный тип 'max' валидатора", value.Kind())
+		return fmt.Errorf("неправильный тип 'max' валидатора: %v", value.Kind())
 	}
+	return nil
 }
 
-func regexp_(validValue string, value rf.Value, field rf.StructField, errors *ValidationErrors) {
+func regexpV(validValue string, value rf.Value, field rf.StructField, errors *ValidationErrors) error {
 	regex, err := regexp.Compile(validValue)
 	if err != nil {
-		appErr(errors, field.Name, "недопустимое регулярное выражение", err.Error())
-		return
+		return fmt.Errorf("недопустимое регулярное выражение: %w", err)
 	}
-	switch value.Kind() {
+	switch value.Kind() { // nolint:exhaustive,nolintlint
 	case rf.String:
 		if !regex.MatchString(value.String()) {
-			appErr(errors, field.Name, "должно соответствовать регулярному выражению", validValue)
+			AppErr(errors, field.Name, "не соответствует регулярному выражению ", validValue)
+		}
+	case rf.Slice:
+		for i := 0; i < value.Len(); i++ {
+			if !regex.MatchString(value.Index(i).String()) {
+				AppErr(errors, field.Name, fmt.Sprintf("элемент %d не соответствует регулярному выражению ", i), validValue)
+			}
 		}
 	default:
-		appErr(errors, field.Name, "неправильный тип 'regexp' валидатора", value.Kind())
+		return fmt.Errorf("неправильный тип 'regexp' валидатора: %v", value.Kind())
 	}
+	return nil
 }
 
-func in_(validValue string, value rf.Value, field rf.StructField, errors *ValidationErrors) {
+func inV(validValue string, value rf.Value, field rf.StructField, errors *ValidationErrors) error {
 	options := strings.Split(validValue, ",")
-	switch value.Kind() {
+	switch value.Kind() { // nolint:exhaustive,nolintlint
 	case rf.String:
 		found := false
 		for _, option := range options {
@@ -148,7 +190,7 @@ func in_(validValue string, value rf.Value, field rf.StructField, errors *Valida
 			}
 		}
 		if !found {
-			appErr(errors, field.Name, "должен быть одним из", validValue)
+			AppErr(errors, field.Name, "должен быть из множества ", validValue)
 		}
 	case rf.Int:
 		found := false
@@ -159,16 +201,62 @@ func in_(validValue string, value rf.Value, field rf.StructField, errors *Valida
 			}
 		}
 		if !found {
-			appErr(errors, field.Name, "должен быть одним из", validValue)
+			AppErr(errors, field.Name, "должен быть из множества ", validValue)
+		}
+	case rf.Slice:
+		if err := verifySlice(value, options, field, validValue, errors); err != nil {
+			return err
 		}
 	default:
-		appErr(errors, field.Name, "неправильный тип 'in' валидатора", value.Kind())
+		return fmt.Errorf("неправильный тип 'in' валидатора: %v", value.Kind())
 	}
+	return nil
 }
 
-func appErr(errors *ValidationErrors, name, msg string, val any) {
+func verifySlice(
+	value rf.Value,
+	options []string,
+	field rf.StructField,
+	validValue string,
+	errors *ValidationErrors,
+) error {
+	typ := value.Type().Elem().Kind()
+	switch typ { // nolint:exhaustive,nolintlint
+	case rf.String:
+		for i := 0; i < value.Len(); i++ {
+			found := false
+			for _, option := range options {
+				if value.Index(i).String() == option {
+					found = true
+					break
+				}
+			}
+			if !found {
+				AppErr(errors, field.Name, fmt.Sprintf("элемент %d должен быть из множества ", i), validValue)
+			}
+		}
+	case rf.Int:
+		for i := 0; i < value.Len(); i++ {
+			found := false
+			for _, option := range options {
+				if value.Index(i).Int() == int64(mustAtoi(option)) {
+					found = true
+					break
+				}
+			}
+			if !found {
+				AppErr(errors, field.Name, fmt.Sprintf("элемент %d должен быть из множества ", i), validValue)
+			}
+		}
+	default:
+		return fmt.Errorf("неправильный тип элементов слайса для 'in' валидатора: %v", typ)
+	}
+	return nil
+}
+
+func AppErr(errors *ValidationErrors, name, msg string, val any) {
 	*errors = append(*errors, ValidationError{
 		Field: name,
-		Err:   fmt.Errorf("%s: %v", msg, val),
+		Err:   fmt.Errorf("%s %v", msg, val),
 	})
 }
