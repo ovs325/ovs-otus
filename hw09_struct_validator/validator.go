@@ -113,7 +113,7 @@ func lenV(validValue string, value rf.Value, field rf.StructField, errors *Valid
 			}
 		}
 	default:
-		return fmt.Errorf("неправильный тип 'min' валидатора: %v", value.Kind())
+		return fmt.Errorf("неправильный тип 'len' валидатора: %v", value.Kind())
 	}
 	return nil
 }
