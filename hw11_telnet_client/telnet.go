@@ -17,12 +17,13 @@ type TelnetClient interface {
 }
 
 type simpleTelnetClient struct {
-	conn    net.Conn
-	in      io.Reader
-	out     io.Writer
-	address string
-	timeout time.Duration
-	cancel  context.CancelFunc
+	conn      net.Conn
+	in        io.Reader
+	out       io.Writer
+	address   string
+	timeout   time.Duration
+	cancel    context.CancelFunc
+	connected bool
 }
 
 func NewTelnetClient(address string, timeout time.Duration, in io.ReadCloser, out io.Writer) TelnetClient {
@@ -36,12 +37,18 @@ func (c *simpleTelnetClient) Connect() (err error) {
 	if c.conn, err = dialer.DialContext(ctx, "tcp", c.address); err != nil {
 		return fmt.Errorf("соединение не удалось: %w", err)
 	}
+	c.connected = true
 	return nil
 }
 
 func (c *simpleTelnetClient) Close() error {
+	if !c.connected {
+		return nil
+	}
 	c.cancel()
-	return c.conn.Close()
+	err := c.conn.Close()
+	c.connected = false
+	return err
 }
 
 func (c *simpleTelnetClient) Send() error {
