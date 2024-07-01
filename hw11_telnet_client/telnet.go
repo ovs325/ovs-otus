@@ -43,7 +43,7 @@ func (c *simpleTelnetClient) Connect() (err error) {
 
 func (c *simpleTelnetClient) Close() error {
 	if !c.connected {
-		return nil
+		return fmt.Errorf("соединение не установлено")
 	}
 	c.cancel()
 	err := c.conn.Close()
