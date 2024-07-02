@@ -37,14 +37,14 @@ func GetDomainStat(r io.Reader, domain string) (DomainStat, error) {
 		if err := jsoniter.Unmarshal(line, &user); err != nil {
 			return nil, err
 		}
-		if strings.Contains(user.Email, "."+domain) {
+
+		if strings.HasSuffix(user.Email, "."+domain) {
 			res := strings.SplitN(user.Email, "@", 2)
 			if len(res) >= 2 {
-				if strings.Contains(res[1], "."+domain) {
-					result[strings.ToLower(res[1])]++
-				}
+				result[strings.ToLower(res[1])]++
 			}
 		}
 	}
+
 	return result, scanner.Err()
 }
