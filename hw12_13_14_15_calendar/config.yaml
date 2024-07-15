@@ -1,0 +1,17 @@
+logger:
+  level: Info
+
+database:
+  host: localhost
+  port: 7777
+  user: user
+  password: pass
+  database: calendar
+  is_postgres: true
+
+reindexer:
+  namespace: events
+
+server:
+  host: localhost
+  port: 7777
