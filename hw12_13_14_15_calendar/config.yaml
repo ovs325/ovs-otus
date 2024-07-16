@@ -2,16 +2,20 @@ logger:
   level: Info
 
 database:
+  is_postgres: true
+  database: calendar
+
+is_postgres:
   host: localhost
   port: 7777
   user: user
   password: pass
-  database: calendar
-  is_postgres: true
 
 reindexer:
   namespace: events
+  host: localhost
+  port: 7778
 
 server:
   host: localhost
-  port: 7777
+  port: 7779

@@ -34,7 +34,7 @@ lint: install-lint-deps
 .PHONY: build run build-img run-img version test lint
 
 reind: 
-	docker run --rm -d -p 9088:9088 -p 7777:6534 reindexer/reindexer
+	docker run --rm -d -p 9088:9088 -p 7778:6534 reindexer/reindexer
 postgr: 
 	docker run --rm -d -e POSTGRES_PASSWORD=pass -e POSTGRES_USER=user -e POSTGRES_DB=calendar -p 7777:5432 postgres
 

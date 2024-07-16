@@ -45,7 +45,7 @@ func main() {
 	var storage ap.Storage
 	var errStorage error
 	if config.Db.IsPostgres {
-		storage, errStorage = sq.NewPgRepo(ctx, config, logg)
+		storage, errStorage = sq.NewPgRepo(ctx, &config, logg)
 	} else {
 		storage, errStorage = mm.NewRxRepo(ctx, &config, logg)
 	}
@@ -60,12 +60,8 @@ func main() {
 
 	logg.Info("calendar is running...")
 
-	routes := rt.NewRouter()
+	routes := rt.NewRouter(logg)
 	routes.AddRoutes()
-
-	if err := server.Start(ctx, &config, *routes); err != nil {
-		logg.Error("failed to start http server", "err", err.Error())
-	}
 
 	// init graceful shutdown
 	defer func() {
@@ -73,7 +69,6 @@ func main() {
 		cancel()
 		if err := recover(); err != nil {
 			log.Println("Panic:", err)
-
 		}
 		ctxtime, canceltime := context.WithTimeout(context.Background(), time.Second*3)
 		defer canceltime()
@@ -81,6 +76,7 @@ func main() {
 			logg.Error("failed to stop http server", "err", err.Error())
 			os.Exit(1) //nolint:gocritic
 		}
+		fmt.Println("Microservice has closed!!")
 	}()
 
 	// start server
@@ -103,6 +99,5 @@ func main() {
 	case err := <-errCh:
 		panic(err)
 	case <-sigs:
-		fmt.Printf("\n\tПолучен sigs \n")
 	}
 }

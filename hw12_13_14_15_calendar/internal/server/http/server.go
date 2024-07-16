@@ -28,7 +28,7 @@ func (s *Server) Start(ctx context.Context, cfg *cf.Config, routes rt.Router) er
 	s.log.Info("the server starts")
 
 	r := mux.NewRouter()
-	for path, params := range routes {
+	for path, params := range routes.Router {
 		r.Handle(path, params.Handler).Methods(params.Method)
 	}
 
@@ -49,8 +49,10 @@ func (s *Server) Start(ctx context.Context, cfg *cf.Config, routes rt.Router) er
 }
 
 func (s *Server) Stop(ctx context.Context) error {
+	fmt.Println("Server forced to shutdown")
 	if err := s.srv.Shutdown(ctx); err != nil {
-		log.Fatal("Server forced to shutdown: ", err)
+		log.Fatal("Shutdown error: ", err)
 	}
+	fmt.Println("Shutdown is successful!!")
 	return nil
 }

@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	hd "github.com/ovs325/ovs-otus/hw12_13_14_15_calendar/api/handlers"
+	lg "github.com/ovs325/ovs-otus/hw12_13_14_15_calendar/internal/logger"
 )
 
 type (
@@ -11,23 +12,25 @@ type (
 		Handler http.Handler
 		Method  string
 	}
-	Router map[string]RouterParams
+	Router struct {
+		Log    lg.Logger
+		Router map[string]RouterParams
+	}
 )
 
-func NewRouter() *Router {
-	return &Router{}
+func NewRouter(log lg.Logger) *Router {
+	return &Router{Log: log}
 }
 
 func (r Router) add(method, path string, handler http.Handler) {
-	r[path] = RouterParams{
+	r.Router[path] = RouterParams{
 		Handler: handler,
 		Method:  method,
 	}
 }
 
 func (r Router) AddRoutes() {
-
 	h := hd.NewHandlersGroup()
 
-	r.add("GET", "/greting", h.HelloHandler())
+	r.add("GET", "/greting", LogRequest(r.Log, h.HelloHandler()))
 }

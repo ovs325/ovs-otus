@@ -21,7 +21,7 @@ type RxRepo struct {
 
 func NewRxRepo(ctx context.Context, conf *cf.Config, log lg.Logger) (ap.Storage, error) {
 	repo := &RxRepo{Namespace: conf.RxCnf.Namespace}
-	repo.GetDSN(conf.Db)
+	repo.GetDSN(conf)
 	if err := repo.Connect(ctx); err != nil {
 		return nil, err
 	}
@@ -81,12 +81,12 @@ func (r *RxRepo) CreateTables(ctx context.Context) (err error) {
 	return nil
 }
 
-func (r *RxRepo) GetDSN(d cf.DbConf) string {
+func (r *RxRepo) GetDSN(d *cf.Config) string {
 	r.DSN = fmt.Sprintf(
 		"cproto://%v:%v/%v",
-		d.Host,
-		d.Port,
-		d.Database,
+		d.RxCnf.Host,
+		d.RxCnf.Port,
+		d.Db.Database,
 	)
 	return r.DSN
 }

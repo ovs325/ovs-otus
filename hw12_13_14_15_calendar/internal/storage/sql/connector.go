@@ -18,9 +18,9 @@ type PgRepo struct {
 	log lg.Logger
 }
 
-func NewPgRepo(ctx context.Context, conf cf.Config, log lg.Logger) (ap.Storage, error) {
+func NewPgRepo(ctx context.Context, conf *cf.Config, log lg.Logger) (ap.Storage, error) {
 	repo := &PgRepo{log: log}
-	repo.GetDSN(conf.Db)
+	repo.GetDSN(conf)
 	if err := repo.Connect(ctx); err != nil {
 		return nil, err
 	}
@@ -91,14 +91,14 @@ WHERE table_name = 'events'`
 	return nil
 }
 
-func (s *PgRepo) GetDSN(d cf.DbConf) string {
+func (s *PgRepo) GetDSN(d *cf.Config) string {
 	s.DSN = fmt.Sprintf(
 		"postgres://%v:%v@%v:%v/%v",
-		d.User,
-		d.Password,
-		d.Host,
-		d.Port,
-		d.Database,
+		d.PgCnf.User,
+		d.PgCnf.Password,
+		d.PgCnf.Host,
+		d.PgCnf.Port,
+		d.Db.Database,
 	)
 	return s.DSN
 }
