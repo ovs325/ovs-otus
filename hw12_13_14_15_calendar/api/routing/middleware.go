@@ -12,13 +12,13 @@ type loggingResponseWriter struct {
 	status int
 }
 
-// Перехватчик вызовов WriteHeader, для записи статуса ответа
+// Перехватчик вызовов WriteHeader, для записи статуса ответа.
 func (lrw *loggingResponseWriter) WriteHeader(status int) {
 	lrw.status = status
 	lrw.ResponseWriter.WriteHeader(status)
 }
 
-// Перехватчик вызовов Write, для записи статуса ответа
+// Перехватчик вызовов Write, для записи статуса ответа.
 func (lrw *loggingResponseWriter) Write(b []byte) (int, error) {
 	if lrw.status == 0 {
 		lrw.status = http.StatusOK

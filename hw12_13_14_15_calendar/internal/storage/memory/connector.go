@@ -2,25 +2,27 @@ package memory
 
 import (
 	"context"
+	"sync"
 
 	ap "github.com/ovs325/ovs-otus/hw12_13_14_15_calendar/internal/app"
-	lg "github.com/ovs325/ovs-otus/hw12_13_14_15_calendar/internal/logger"
 	st "github.com/ovs325/ovs-otus/hw12_13_14_15_calendar/internal/storage"
 )
 
 type MemRepo struct {
+	mu     sync.RWMutex // Добавляем мьютекс
 	Repo   map[int64]st.EventModel
-	LastId int64
-	log    lg.Logger
+	LastID int64
 }
 
-func NewMenRepo(log lg.Logger) (ap.Storage, error) {
-	repo := &MemRepo{log: log, LastId: int64(0)}
+func NewMemRepo() (ap.Storage, error) {
+	repo := &MemRepo{LastID: int64(0)}
 	repo.Connect(context.Background())
 	return repo, nil
 }
 
-func (r *MemRepo) Connect(ctx context.Context) error {
+func (r *MemRepo) Connect(_ context.Context) error {
+	r.mu.Lock()         // Блокируем мьютекс
+	defer r.mu.Unlock() // Разблокируем мьютекс при выходе из функции
 	r.Repo = map[int64]st.EventModel{}
 	return nil
 }

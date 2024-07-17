@@ -10,16 +10,15 @@ type BusinessLogic interface {
 	GetRes() error
 }
 
-type HandlersGroup struct{}
+type Group struct{}
 
-func NewHandlersGroup() HandlersGroup {
-	return HandlersGroup{}
+func NewHandlersGroup() Group {
+	return Group{}
 }
 
-func (*HandlersGroup) HelloHandler() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
+func (*Group) HelloHandler() http.HandlerFunc {
+	return func(w http.ResponseWriter, _ *http.Request) {
 		response := struct{ Msg string }{Msg: "Hello!!"}
-
-		cm.NewResponse(w).JsonResp(response)
+		cm.NewResponse(w).JSONResp(response)
 	}
 }

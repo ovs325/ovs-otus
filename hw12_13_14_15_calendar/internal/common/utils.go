@@ -25,7 +25,7 @@ func NewResponse(w http.ResponseWriter) *Response {
 	}
 }
 
-func (r *Response) JsonResp(v any) {
+func (r *Response) JSONResp(v any) {
 	r.Wr.Header().Set("Content-Type", "application/json")
 
 	json, err := json.Marshal(v)

@@ -8,7 +8,7 @@ import (
 	st "github.com/ovs325/ovs-otus/hw12_13_14_15_calendar/internal/storage"
 )
 
-// Создать событие
+// Создать событие.
 func (p *PgRepo) CreateEvent(ctx context.Context, event *st.EventModel) (id int64, err error) {
 	q := `
 INSERT INTO events (name, date, expiry, description, user_id, time_alarm) 
@@ -19,7 +19,7 @@ VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id`
 		event.Date, // .Unix(),
 		event.Expiry,
 		event.Description,
-		event.UserId,
+		event.UserID,
 		event.TimeAlarm, // .Unix(),
 	)
 
@@ -29,7 +29,7 @@ VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id`
 	return id, nil
 }
 
-// Обновить событие;
+// Обновить событие.
 func (p *PgRepo) UpdateEvent(ctx context.Context, event *st.EventModel) error {
 	if event.ID == 0 {
 		return fmt.Errorf("the id must not be zero")
@@ -50,18 +50,17 @@ func (p *PgRepo) UpdateEvent(ctx context.Context, event *st.EventModel) error {
 		event.Date, // .Unix(),
 		event.Expiry,
 		event.Description,
-		event.UserId,
+		event.UserID,
 		event.TimeAlarm, // .Unix(),
 		event.ID,
 	)
-
 	if err != nil {
 		return fmt.Errorf("error updating data of EventModel: %w", err)
 	}
 	return nil
 }
 
-// Удалить событие;
+// Удалить событие.
 func (p *PgRepo) DelEvent(ctx context.Context, id int64) error {
 	// Check if the record exists
 	exists, err := p.isExist(ctx, id)
@@ -79,14 +78,14 @@ func (p *PgRepo) DelEvent(ctx context.Context, id int64) error {
 	return nil
 }
 
-// Список Событий На День;
+// Список Событий На День.
 func (p *PgRepo) GetDay(ctx context.Context, date time.Time) ([]st.EventModel, error) {
 	first := time.Date(date.Year(), date.Month(), date.Day(), 0, 0, 0, 0, date.Location())
 	last := first.AddDate(0, 0, 1).Add(-time.Nanosecond)
 	return p.getEventsForTimeInterval(ctx, first, last)
 }
 
-// Список Событий На Неделю;
+// Список Событий На Неделю.
 func (p *PgRepo) GetWeek(ctx context.Context, date time.Time) ([]st.EventModel, error) {
 	first := date.AddDate(0, 0, -int(date.Weekday()))
 	last := first.AddDate(0, 0, 7).Add(-time.Nanosecond)
@@ -114,7 +113,7 @@ func (p *PgRepo) getEventsForTimeInterval(ctx context.Context, start, end time.T
 	for rows.Next() {
 		var event st.EventModel
 		if err := rows.Scan(
-			&event.ID, &event.Name, &event.Date, &event.Expiry, &event.Description, &event.UserId, &event.TimeAlarm,
+			&event.ID, &event.Name, &event.Date, &event.Expiry, &event.Description, &event.UserID, &event.TimeAlarm,
 		); err != nil {
 			return nil, fmt.Errorf("error scanning event row: %w", err)
 		}
@@ -126,7 +125,7 @@ func (p *PgRepo) getEventsForTimeInterval(ctx context.Context, start, end time.T
 	return events, nil
 }
 
-// Проверка на существование события с заданным id
+// Проверка на существование события с заданным id.
 func (p *PgRepo) isExist(ctx context.Context, id int64) (ok bool, err error) {
 	var count int64
 	q := "SELECT COUNT(*) FROM events WHERE id = $1"

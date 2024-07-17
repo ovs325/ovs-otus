@@ -44,10 +44,10 @@ func main() {
 
 	var storage ap.Storage
 	var errStorage error
-	if config.Db.IsPostgres {
+	if config.DB.IsPostgres {
 		storage, errStorage = sq.NewPgRepo(ctx, &config, logg)
 	} else {
-		storage, errStorage = mm.NewMenRepo(logg)
+		storage, errStorage = mm.NewMemRepo()
 	}
 	if errStorage != nil {
 		logg.Error("data storage initialization error", "err", errStorage.Error())
@@ -63,7 +63,7 @@ func main() {
 	routes := rt.NewRouter(logg)
 	routes.AddRoutes()
 
-	// init graceful shutdown
+	// init graceful shutdown.
 	defer func() {
 		logg.Info("Closing microservice gracefully...")
 		storage.Close()
@@ -75,12 +75,12 @@ func main() {
 		defer canceltime()
 		if err := server.Stop(ctxtime); err != nil {
 			logg.Error("failed to stop http server", "err", err.Error())
-			os.Exit(1) //nolint:gocritic
+			os.Exit(1)
 		}
 		fmt.Println("Microservice has closed!!")
 	}()
 
-	// start server
+	// start server.
 	errCh := make(chan error)
 
 	sigs := make(chan os.Signal, 1)

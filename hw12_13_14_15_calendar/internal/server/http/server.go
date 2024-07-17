@@ -20,11 +20,11 @@ type Server struct {
 type Application interface { // TODO
 }
 
-func NewServer(logger lg.Logger, app Application) *Server {
+func NewServer(logger lg.Logger, _ Application) *Server {
 	return &Server{log: logger}
 }
 
-func (s *Server) Start(ctx context.Context, cfg *cf.Config, routes rt.Router) error {
+func (s *Server) Start(_ context.Context, cfg *cf.Config, routes rt.Router) error {
 	s.log.Info("the server starts")
 
 	r := mux.NewRouter()
@@ -36,7 +36,7 @@ func (s *Server) Start(ctx context.Context, cfg *cf.Config, routes rt.Router) er
 
 	s.log.Info("Server started successfully!", "address", dsn)
 
-	s.srv = &http.Server{
+	s.srv = &http.Server{ //nolint:gosec
 		Addr:    dsn,
 		Handler: r,
 	}

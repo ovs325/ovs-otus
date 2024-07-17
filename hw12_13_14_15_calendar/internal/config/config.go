@@ -9,7 +9,7 @@ import (
 type Config struct {
 	Server ServerConf   `mapstructure:"server"`
 	Logger LoggerConf   `mapstructure:"logger"`
-	Db     DbConf       `mapstructure:"database"`
+	DB     DBConf       `mapstructure:"database"`
 	RxCnf  ReindexerCnf `mapstructure:"reindexer"`
 	PgCnf  PostgresCnf  `mapstructure:"postgres"`
 }

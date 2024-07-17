@@ -4,7 +4,7 @@ type LoggerConf struct {
 	Level string `mapstructure:"level"`
 }
 
-type DbConf struct {
+type DBConf struct {
 	Database   string `mapstructure:"database"`
 	IsPostgres bool   `mapstructure:"isPostgres"`
 }

@@ -13,11 +13,9 @@ type Logger interface {
 	Error(msg string, args ...any)
 }
 
-type SLogger struct {
-}
+type SLogger struct{}
 
 func NewSLogger(level string) Logger {
-
 	logConfig := &slog.HandlerOptions{
 		AddSource:   false,
 		ReplaceAttr: nil,
