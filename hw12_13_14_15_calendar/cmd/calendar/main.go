@@ -47,7 +47,7 @@ func main() {
 	if config.Db.IsPostgres {
 		storage, errStorage = sq.NewPgRepo(ctx, &config, logg)
 	} else {
-		storage, errStorage = mm.NewRxRepo(ctx, &config, logg)
+		storage, errStorage = mm.NewMenRepo(logg)
 	}
 	if errStorage != nil {
 		logg.Error("data storage initialization error", "err", errStorage.Error())
@@ -66,6 +66,7 @@ func main() {
 	// init graceful shutdown
 	defer func() {
 		logg.Info("Closing microservice gracefully...")
+		storage.Close()
 		cancel()
 		if err := recover(); err != nil {
 			log.Println("Panic:", err)
