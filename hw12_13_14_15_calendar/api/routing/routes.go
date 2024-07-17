@@ -19,7 +19,10 @@ type (
 )
 
 func NewRouter(log lg.Logger) *Router {
-	return &Router{Log: log}
+	r := map[string]RouterParams{}
+	return &Router{
+		Log:    log,
+		Router: r}
 }
 
 func (r Router) add(method, path string, handler http.Handler) {
