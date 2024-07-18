@@ -1,6 +1,6 @@
 module github.com/ovs325/ovs-otus/hw12_13_14_15_calendar
 
-go 1.19
+go 1.22
 
 require (
 	github.com/spf13/viper v1.19.0
