@@ -3,21 +3,26 @@ package main
 import (
 	"context"
 	"flag"
+	"fmt"
+	"log"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
 
-	"github.com/ovs325/ovs-otus/hw12_13_14_15_calendar/internal/app"
-	"github.com/ovs325/ovs-otus/hw12_13_14_15_calendar/internal/logger"
-	internalhttp "github.com/ovs325/ovs-otus/hw12_13_14_15_calendar/internal/server/http"
-	memorystorage "github.com/ovs325/ovs-otus/hw12_13_14_15_calendar/internal/storage/memory"
+	rt "github.com/ovs325/ovs-otus/hw12_13_14_15_calendar/api/routing"
+	ap "github.com/ovs325/ovs-otus/hw12_13_14_15_calendar/internal/app"
+	cf "github.com/ovs325/ovs-otus/hw12_13_14_15_calendar/internal/config"
+	lg "github.com/ovs325/ovs-otus/hw12_13_14_15_calendar/internal/logger"
+	hp "github.com/ovs325/ovs-otus/hw12_13_14_15_calendar/internal/server/http"
+	mm "github.com/ovs325/ovs-otus/hw12_13_14_15_calendar/internal/storage/memory"
+	sq "github.com/ovs325/ovs-otus/hw12_13_14_15_calendar/internal/storage/sql"
 )
 
 var configFile string
 
 func init() {
-	flag.StringVar(&configFile, "config", "/etc/calendar/config.toml", "Path to configuration file")
+	flag.StringVar(&configFile, "config", "../../", "Path to configuration file")
 }
 
 func main() {
@@ -28,34 +33,72 @@ func main() {
 		return
 	}
 
-	config := NewConfig()
-	logg := logger.New(config.Logger.Level)
+	config, err := cf.NewConfig(configFile)
+	if err != nil {
+		fmt.Printf("failed to load config: %s", err.Error())
+	}
 
-	storage := memorystorage.New()
-	calendar := app.New(logg, storage)
+	logg := lg.NewSLogger(config.Logger.Level)
 
-	server := internalhttp.NewServer(logg, calendar)
+	ctx, cancel := context.WithCancel(context.Background())
 
-	ctx, cancel := signal.NotifyContext(context.Background(),
-		syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
-	defer cancel()
+	var storage ap.Storage
+	var errStorage error
+	if config.DB.IsPostgres {
+		storage, errStorage = sq.NewPgRepo(ctx, &config, logg)
+	} else {
+		storage, errStorage = mm.NewMemRepo()
+	}
+	if errStorage != nil {
+		logg.Error("data storage initialization error", "err", errStorage.Error())
+		return
+	}
 
-	go func() {
-		<-ctx.Done()
+	calendar := ap.New(logg, storage)
 
-		ctx, cancel := context.WithTimeout(context.Background(), time.Second*3)
-		defer cancel()
-
-		if err := server.Stop(ctx); err != nil {
-			logg.Error("failed to stop http server: " + err.Error())
-		}
-	}()
+	server := hp.NewServer(logg, calendar)
 
 	logg.Info("calendar is running...")
 
-	if err := server.Start(ctx); err != nil {
-		logg.Error("failed to start http server: " + err.Error())
+	routes := rt.NewRouter(logg)
+	routes.AddRoutes()
+
+	// init graceful shutdown.
+	defer func() {
+		logg.Info("Closing microservice gracefully...")
+		storage.Close()
 		cancel()
-		os.Exit(1) //nolint:gocritic
+		if err := recover(); err != nil {
+			log.Println("Panic:", err)
+		}
+		ctxtime, canceltime := context.WithTimeout(context.Background(), time.Second*3)
+		defer canceltime()
+		if err := server.Stop(ctxtime); err != nil {
+			logg.Error("failed to stop http server", "err", err.Error())
+			os.Exit(1)
+		}
+		fmt.Println("Microservice has closed!!")
+	}()
+
+	// start server.
+	errCh := make(chan error)
+
+	sigs := make(chan os.Signal, 1)
+	signal.Notify(
+		sigs,
+		os.Interrupt,
+		syscall.SIGINT,
+		syscall.SIGTERM,
+		syscall.SIGHUP,
+	)
+
+	go func() {
+		errCh <- server.Start(ctx, &config, *routes)
+	}()
+
+	select {
+	case err := <-errCh:
+		panic(err)
+	case <-sigs:
 	}
 }
