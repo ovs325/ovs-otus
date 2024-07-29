@@ -4,17 +4,17 @@ import (
 	"context"
 	"sync"
 
-	ap "github.com/ovs325/ovs-otus/hw12_13_14_15_calendar/internal/app"
-	st "github.com/ovs325/ovs-otus/hw12_13_14_15_calendar/internal/storage"
+	hd "github.com/ovs325/ovs-otus/hw12_13_14_15_calendar/api/handlers"
+	bl "github.com/ovs325/ovs-otus/hw12_13_14_15_calendar/internal/business_logic"
 )
 
 type MemRepo struct {
 	mu     sync.RWMutex // Добавляем мьютекс
-	Repo   map[int64]st.EventModel
+	Repo   map[int64]hd.EventModel
 	LastID int64
 }
 
-func NewMemRepo() (ap.Storage, error) {
+func NewMemRepo() (bl.AbstractStorage, error) {
 	repo := &MemRepo{LastID: int64(0)}
 	repo.Connect(context.Background())
 	return repo, nil
@@ -23,7 +23,7 @@ func NewMemRepo() (ap.Storage, error) {
 func (r *MemRepo) Connect(_ context.Context) error {
 	r.mu.Lock()         // Блокируем мьютекс
 	defer r.mu.Unlock() // Разблокируем мьютекс при выходе из функции
-	r.Repo = map[int64]st.EventModel{}
+	r.Repo = map[int64]hd.EventModel{}
 	return nil
 }
 

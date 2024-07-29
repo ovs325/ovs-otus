@@ -7,7 +7,7 @@ import (
 	"fmt"
 
 	"github.com/jackc/pgx/v4/pgxpool"
-	ap "github.com/ovs325/ovs-otus/hw12_13_14_15_calendar/internal/app"
+	bl "github.com/ovs325/ovs-otus/hw12_13_14_15_calendar/internal/business_logic"
 	cf "github.com/ovs325/ovs-otus/hw12_13_14_15_calendar/internal/config"
 	lg "github.com/ovs325/ovs-otus/hw12_13_14_15_calendar/internal/logger"
 )
@@ -18,7 +18,7 @@ type PgRepo struct {
 	log lg.Logger
 }
 
-func NewPgRepo(ctx context.Context, conf *cf.Config, log lg.Logger) (ap.Storage, error) {
+func NewPgRepo(ctx context.Context, conf *cf.Config, log lg.Logger) (bl.AbstractStorage, error) {
 	repo := &PgRepo{log: log}
 	repo.GetDSN(conf)
 	if err := repo.Connect(ctx); err != nil {

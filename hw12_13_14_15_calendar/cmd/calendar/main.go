@@ -11,7 +11,7 @@ import (
 	"time"
 
 	rt "github.com/ovs325/ovs-otus/hw12_13_14_15_calendar/api/routing"
-	ap "github.com/ovs325/ovs-otus/hw12_13_14_15_calendar/internal/app"
+	bl "github.com/ovs325/ovs-otus/hw12_13_14_15_calendar/internal/business_logic"
 	cf "github.com/ovs325/ovs-otus/hw12_13_14_15_calendar/internal/config"
 	lg "github.com/ovs325/ovs-otus/hw12_13_14_15_calendar/internal/logger"
 	hp "github.com/ovs325/ovs-otus/hw12_13_14_15_calendar/internal/server/http"
@@ -42,7 +42,7 @@ func main() {
 
 	ctx, cancel := context.WithCancel(context.Background())
 
-	var storage ap.Storage
+	var storage bl.AbstractStorage
 	var errStorage error
 	if config.DB.IsPostgres {
 		storage, errStorage = sq.NewPgRepo(ctx, &config, logg)
@@ -54,14 +54,16 @@ func main() {
 		return
 	}
 
-	calendar := ap.New(logg, storage)
+	logic := bl.NewBusinessLogic(storage)
 
-	server := hp.NewServer(logg, calendar)
+	// calendar := ap.New(logg, storage)
 
-	logg.Info("calendar is running...")
+	// logg.Info("calendar is running...")
 
 	routes := rt.NewRouter(logg)
-	routes.AddRoutes()
+	routes.AddRoutes(logic)
+
+	server := hp.NewServer(logg)
 
 	// init graceful shutdown.
 	defer func() {

@@ -20,7 +20,7 @@ type Server struct {
 type Application interface { // TODO
 }
 
-func NewServer(logger lg.Logger, _ Application) *Server {
+func NewServer(logger lg.Logger) *Server {
 	return &Server{log: logger}
 }
 
