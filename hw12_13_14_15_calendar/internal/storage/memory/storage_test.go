@@ -10,8 +10,6 @@ import (
 
 	hd "github.com/ovs325/ovs-otus/hw12_13_14_15_calendar/api/handlers"
 	cm "github.com/ovs325/ovs-otus/hw12_13_14_15_calendar/internal/common"
-
-	// st "github.com/ovs325/ovs-otus/hw12_13_14_15_calendar/internal/storage"
 	"github.com/stretchr/testify/assert"
 )
 

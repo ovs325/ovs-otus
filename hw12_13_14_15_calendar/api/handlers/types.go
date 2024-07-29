@@ -8,13 +8,13 @@ type QueryPage[T any] struct {
 	Total   int64 `json:"total"`
 }
 
-// Основные параметры события из тела запроса
+// Основные параметры события из тела запроса.
 type EventRequest struct {
 	Event
 	NDayAlarm int `json:"nDayAlarm"`
 }
 
-// Основные параметры События
+// Основные параметры События.
 type Event struct {
 	ID          int64     `json:"id"`
 	Name        string    `json:"name"`

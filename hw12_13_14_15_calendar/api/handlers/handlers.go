@@ -14,12 +14,12 @@ type BusinessLogic interface {
 	GetRes() error
 }
 
-type HandlersGroup struct {
+type Handlers struct {
 	logic AbstractLogic
 }
 
-func NewHandlersGroup(l AbstractLogic) HandlersGroup {
-	return HandlersGroup{logic: l}
+func NewHandlersGroup(l AbstractLogic) Handlers {
+	return Handlers{logic: l}
 }
 
 type AbstractLogic interface {
@@ -43,10 +43,11 @@ type AbstractLogic interface {
 	) (QueryPage[EventModel], error)
 }
 
-// Создать событие.
 // POST
 // В теле передаем структуру st.EventRequest.
-func (h *HandlersGroup) CreateEventHandler() http.HandlerFunc {
+
+// Создать событие.
+func (h *Handlers) CreateEventHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		checkItem := new(EventRequest)
 		err := cm.Decode(r.Body, checkItem)
@@ -62,10 +63,11 @@ func (h *HandlersGroup) CreateEventHandler() http.HandlerFunc {
 	}
 }
 
-// Редактировать событие.
 // PATCH
 // В теле передаем структуру st.EventRequest.
-func (h *HandlersGroup) UpdateEventHandler() http.HandlerFunc {
+
+// Редактировать событие.
+func (h *Handlers) UpdateEventHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		checkItem := new(EventRequest)
 		err := cm.Decode(r.Body, checkItem)
@@ -79,10 +81,11 @@ func (h *HandlersGroup) UpdateEventHandler() http.HandlerFunc {
 	}
 }
 
-// Удалить событие.
 // DEL
 // Query-параметр: id удаляемого события.
-func (h *HandlersGroup) DelEventHandler() http.HandlerFunc {
+
+// Удалить событие.
+func (h *Handlers) DelEventHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id, err := cm.ParamInt(r, "id")
 		if err != nil {
@@ -95,14 +98,15 @@ func (h *HandlersGroup) DelEventHandler() http.HandlerFunc {
 	}
 }
 
-// Получить список событий за день.
 // GET
 // Query-параметр:
 //
 //	date - time.Time.
 //	page - int - страница,
 //	size - int - объектов на страницу.
-func (h *HandlersGroup) GetDayHandler() http.HandlerFunc {
+
+// Получить список событий за день.
+func (h *Handlers) GetDayHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		date, err := cm.ParamTime(r, "date")
 		if err != nil {
@@ -118,14 +122,15 @@ func (h *HandlersGroup) GetDayHandler() http.HandlerFunc {
 	}
 }
 
-// Получить список событий за неделю.
 // GET
 // Query-параметр:
 //
 //	date - time.Time.
 //	page - int - страница,
 //	size - int - объектов на страницу.
-func (h *HandlersGroup) GetWeekHandler() http.HandlerFunc {
+
+// Получить список событий за неделю.
+func (h *Handlers) GetWeekHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		date, err := cm.ParamTime(r, "date")
 		if err != nil {
@@ -141,14 +146,15 @@ func (h *HandlersGroup) GetWeekHandler() http.HandlerFunc {
 	}
 }
 
-// Получить список событий за месяц.
 // GET
 // Query-параметр:
 //
 //	date - time.Time.
 //	page - int - страница,
 //	size - int - объектов на страницу.
-func (h *HandlersGroup) GetMonthHandler() http.HandlerFunc {
+
+// Получить список событий за месяц.
+func (h *Handlers) GetMonthHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		date, err := cm.ParamTime(r, "date")
 		if err != nil {

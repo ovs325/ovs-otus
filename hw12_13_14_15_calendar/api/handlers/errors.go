@@ -29,7 +29,7 @@ func NewResponse(w http.ResponseWriter) *Response {
 	}
 }
 
-func (r *Response) JsonResp(v any) {
+func (r *Response) JSONResp(v any) {
 	r.Wr.Header().Set("Content-Type", "application/json")
 
 	json, err := json.Marshal(v)
@@ -55,10 +55,10 @@ func (r *Response) SetStatus(status int) *Response {
 
 func ClientError(w http.ResponseWriter, msg string) {
 	err := ErrRequest{Error: msg}
-	NewResponse(w).SetStatus(http.StatusBadRequest).JsonResp(err)
+	NewResponse(w).SetStatus(http.StatusBadRequest).JSONResp(err)
 }
 
 func ServerError(w http.ResponseWriter, msg string) {
 	err := ErrRequest{Error: msg}
-	NewResponse(w).SetStatus(http.StatusInternalServerError).JsonResp(err)
+	NewResponse(w).SetStatus(http.StatusInternalServerError).JSONResp(err)
 }

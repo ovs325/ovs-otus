@@ -78,7 +78,7 @@ func ParamInt(r *http.Request, param string) (int, error) {
 }
 
 func ParamTime(r *http.Request, param string) (date time.Time, err error) {
-	dateStr := r.URL.Query().Get("date")
+	dateStr := r.URL.Query().Get(param)
 	date, err = time.Parse(time.RFC3339, dateStr)
 	if err != nil {
 		return date, er.ErrBadFormatTime
