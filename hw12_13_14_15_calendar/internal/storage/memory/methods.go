@@ -6,12 +6,12 @@ import (
 	"sort"
 	"time"
 
-	hd "github.com/ovs325/ovs-otus/hw12_13_14_15_calendar/api/handlers"
 	cm "github.com/ovs325/ovs-otus/hw12_13_14_15_calendar/internal/common"
+	tp "github.com/ovs325/ovs-otus/hw12_13_14_15_calendar/internal/types"
 )
 
 // Создать событие.
-func (r *MemRepo) CreateEvent(_ context.Context, event *hd.EventModel) (id int64, err error) {
+func (r *MemRepo) CreateEvent(_ context.Context, event *tp.EventModel) (id int64, err error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	r.LastID++
@@ -22,7 +22,7 @@ func (r *MemRepo) CreateEvent(_ context.Context, event *hd.EventModel) (id int64
 }
 
 // Обновить событие.
-func (r *MemRepo) UpdateEvent(_ context.Context, event *hd.EventModel) error {
+func (r *MemRepo) UpdateEvent(_ context.Context, event *tp.EventModel) error {
 	if event.ID == 0 {
 		return fmt.Errorf("the id must not be zero")
 	}
@@ -48,8 +48,8 @@ func (r *MemRepo) GetEventsForTimeInterval(
 	_ context.Context,
 	start, end time.Time,
 	datePaginate cm.Paginate,
-) (hd.QueryPage[hd.EventModel], error) {
-	var events []hd.EventModel
+) (tp.QueryPage[tp.EventModel], error) {
+	var events []tp.EventModel
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 	for _, event := range r.Repo {
@@ -63,7 +63,7 @@ func (r *MemRepo) GetEventsForTimeInterval(
 
 	lenEv := len(events)
 	if datePaginate.Page <= 0 || datePaginate.Size <= 0 {
-		return hd.QueryPage[hd.EventModel]{
+		return tp.QueryPage[tp.EventModel]{
 			Content: events,
 			Page:    datePaginate.Page,
 			Total:   int64(lenEv),
@@ -78,7 +78,7 @@ func (r *MemRepo) GetEventsForTimeInterval(
 	if endIndex > lenEv {
 		endIndex = lenEv
 	}
-	return hd.QueryPage[hd.EventModel]{
+	return tp.QueryPage[tp.EventModel]{
 		Content: events[startIndex:endIndex],
 		Page:    datePaginate.Page,
 		Total:   int64(lenEv),

@@ -8,8 +8,8 @@ import (
 	"testing"
 	"time"
 
-	hd "github.com/ovs325/ovs-otus/hw12_13_14_15_calendar/api/handlers"
 	cm "github.com/ovs325/ovs-otus/hw12_13_14_15_calendar/internal/common"
+	tp "github.com/ovs325/ovs-otus/hw12_13_14_15_calendar/internal/types"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -17,7 +17,7 @@ import (
 func Test_CreateEvent(t *testing.T) {
 	storage, _ := NewMemRepo()
 	repo := storage.(*MemRepo)
-	event := &hd.EventModel{Event: hd.Event{ID: 0, Name: "Test Event"}}
+	event := &tp.EventModel{Event: tp.Event{ID: 0, Name: "Test Event"}}
 	id, err := repo.CreateEvent(context.Background(), event)
 
 	assert.NoErrorf(t, err, "Error creating event: %v", err)
@@ -31,7 +31,7 @@ func Test_UpdateEvent(t *testing.T) {
 	storage, _ := NewMemRepo()
 	repo := storage.(*MemRepo)
 	ctx := context.Background()
-	event := &hd.EventModel{Event: hd.Event{ID: 0, Name: "Test Event"}}
+	event := &tp.EventModel{Event: tp.Event{ID: 0, Name: "Test Event"}}
 	id, _ := repo.CreateEvent(ctx, event)
 	res, ok := repo.Repo[id]
 	assert.Truef(t, ok, "Event not exist to repository")
@@ -49,7 +49,7 @@ func Test_DelEvent(t *testing.T) {
 	storage, _ := NewMemRepo()
 	repo := storage.(*MemRepo)
 	ctx := context.Background()
-	event := &hd.EventModel{Event: hd.Event{ID: 0, Name: "Test Event"}}
+	event := &tp.EventModel{Event: tp.Event{ID: 0, Name: "Test Event"}}
 	id, _ := repo.CreateEvent(ctx, event)
 	_, ok := repo.Repo[id]
 	assert.Truef(t, ok, "Event not exist to repository")
@@ -59,85 +59,16 @@ func Test_DelEvent(t *testing.T) {
 	assert.Falsef(t, ok, "Event not deleted from repository")
 }
 
-// // Проверяем, что GetDay возвращает события за указанный день.
-// func Test_GetDay(t *testing.T) {
-// 	storage, _ := NewMemRepo()
-// 	repo := storage.(*MemRepo)
-// 	ctx := context.Background()
-// 	events := []hd.EventModel{
-// 		{Event: hd.Event{ID: 1, Name: "Event 1", Date: time.Date(2023, 5, 1, 10, 0, 0, 0, time.UTC)}},
-// 		{Event: hd.Event{ID: 2, Name: "Event 2", Date: time.Date(2023, 5, 2, 11, 0, 0, 0, time.UTC)}},
-// 		{Event: hd.Event{ID: 3, Name: "Event 3", Date: time.Date(2023, 5, 1, 12, 0, 0, 0, time.UTC)}},
-// 	}
-// 	for _, event := range events {
-// 		_, err := repo.CreateEvent(ctx, &event)
-// 		assert.NoErrorf(t, err, "Error creating event: %v", err)
-// 	}
-// 	day := time.Date(2023, 5, 1, 0, 0, 0, 0, time.UTC)
-// 	dayEvents, err := repo.GetDay(ctx, day)
-// 	assert.NoErrorf(t, err, "Error getting events for day: %v", err)
-// 	assert.Equal(t, len(dayEvents), 2)
-// 	for _, event := range dayEvents {
-// 		assert.Equal(t, day.Day(), event.Date.Day())
-// 	}
-// }
-
-// // Проверяем, что GetWeek возвращает события за указанную неделю.
-// func Test_GetWeek(t *testing.T) {
-// 	storage, _ := NewMemRepo()
-// 	repo := storage.(*MemRepo)
-// 	ctx := context.Background()
-// 	events := []hd.EventModel{
-// 		{Event: hd.Event{ID: 1, Name: "Event 1", Date: time.Date(2023, 5, 1, 10, 0, 0, 0, time.UTC)}},
-// 		{Event: hd.Event{ID: 2, Name: "Event 2", Date: time.Date(2023, 5, 2, 11, 0, 0, 0, time.UTC)}},
-// 		{Event: hd.Event{ID: 3, Name: "Event 3", Date: time.Date(2023, 5, 8, 12, 0, 0, 0, time.UTC)}},
-// 	}
-// 	for _, event := range events {
-// 		_, err := repo.CreateEvent(ctx, &event)
-// 		assert.NoErrorf(t, err, "Error creating event: %v", err)
-// 	}
-// 	week := time.Date(2023, 5, 1, 0, 0, 0, 0, time.UTC)
-// 	weekEvents, err := repo.GetWeek(ctx, week)
-// 	assert.NoErrorf(t, err, "Error getting events for week: %v", err)
-// 	assert.Equal(t, 2, len(weekEvents))
-// 	for _, event := range weekEvents {
-// 		assert.True(t, event.Date.After(week) && event.Date.Before(week.AddDate(0, 0, 7)))
-// 	}
-// }
-
-// // Проверяем, что GetMonth возвращает события за указанный месяц.
-// func Test_GetMonth(t *testing.T) {
-// 	storage, _ := NewMemRepo()
-// 	repo := storage.(*MemRepo)
-// 	ctx := context.Background()
-// 	events := []hd.EventModel{
-// 		{Event: hd.Event{ID: 1, Name: "Event 1", Date: time.Date(2023, 5, 1, 10, 0, 0, 0, time.UTC)}},
-// 		{Event: hd.Event{ID: 2, Name: "Event 2", Date: time.Date(2023, 6, 2, 11, 0, 0, 0, time.UTC)}},
-// 		{Event: hd.Event{ID: 3, Name: "Event 3", Date: time.Date(2023, 5, 15, 12, 0, 0, 0, time.UTC)}},
-// 	}
-// 	for _, event := range events {
-// 		_, err := repo.CreateEvent(ctx, &event)
-// 		assert.NoErrorf(t, err, "Error creating event: %v", err)
-// 	}
-// 	month := time.Date(2023, 5, 1, 0, 0, 0, 0, time.UTC)
-// 	monthEvents, err := repo.GetMonth(ctx, month)
-// 	assert.NoErrorf(t, err, "Error getting events for month: %v", err)
-// 	assert.Equal(t, 2, len(monthEvents))
-// 	for _, event := range monthEvents {
-// 		assert.Equal(t, month.Month(), event.Date.Month())
-// 	}
-// }
-
-// Проверка того, что getEventsForTimeInterval
+// Проверка того, что GetEventsForTimeInterval
 // возвращает события в указанном интервале.
 func Test_getEventsForTimeInterval(t *testing.T) {
 	storage, _ := NewMemRepo()
 	repo := storage.(*MemRepo)
 	ctx := context.Background()
-	events := []hd.EventModel{
-		{Event: hd.Event{ID: 1, Name: "Event 1", Date: time.Date(2023, 5, 1, 10, 0, 0, 0, time.UTC)}},
-		{Event: hd.Event{ID: 2, Name: "Event 2", Date: time.Date(2023, 5, 2, 11, 0, 0, 0, time.UTC)}},
-		{Event: hd.Event{ID: 3, Name: "Event 3", Date: time.Date(2023, 5, 3, 12, 0, 0, 0, time.UTC)}},
+	events := []tp.EventModel{
+		{Event: tp.Event{ID: 1, Name: "Event 1", Date: time.Date(2023, 5, 1, 10, 0, 0, 0, time.UTC)}},
+		{Event: tp.Event{ID: 2, Name: "Event 2", Date: time.Date(2023, 5, 2, 11, 0, 0, 0, time.UTC)}},
+		{Event: tp.Event{ID: 3, Name: "Event 3", Date: time.Date(2023, 5, 3, 12, 0, 0, 0, time.UTC)}},
 	}
 	for _, event := range events {
 		_, err := repo.CreateEvent(ctx, &event)
@@ -159,7 +90,7 @@ func Test_BusinessLogic_UpdateEventError(t *testing.T) {
 	storage, _ := NewMemRepo()
 	repo := storage.(*MemRepo)
 	ctx := context.Background()
-	event := &hd.EventModel{Event: hd.Event{ID: 0, Name: "Test Event"}}
+	event := &tp.EventModel{Event: tp.Event{ID: 0, Name: "Test Event"}}
 	id, _ := repo.CreateEvent(ctx, event)
 	_, ok := repo.Repo[id]
 	assert.Truef(t, ok, "Event not exist to repository")
@@ -180,7 +111,7 @@ func Test_CreateEventsConcurrently(t *testing.T) {
 		wg.Add(1)
 		go func(i int) {
 			defer wg.Done()
-			event := &hd.EventModel{Event: hd.Event{Name: fmt.Sprintf("Test Event %d", i)}}
+			event := &tp.EventModel{Event: tp.Event{Name: fmt.Sprintf("Test Event %d", i)}}
 			_, err := repo.CreateEvent(ctx, event)
 			assert.NoErrorf(t, err, "Error creating event: %v", err)
 		}(i)
@@ -197,7 +128,7 @@ func Test_UpdateEventsConcurrently(t *testing.T) {
 	ctx := context.Background()
 	ids := []int64{}
 	for i := 0; i < lenTest; i++ {
-		event := &hd.EventModel{Event: hd.Event{Name: fmt.Sprintf("Test Event %d", i)}}
+		event := &tp.EventModel{Event: tp.Event{Name: fmt.Sprintf("Test Event %d", i)}}
 		id, _ := repo.CreateEvent(ctx, event)
 		ids = append(ids, id)
 	}
@@ -207,7 +138,7 @@ func Test_UpdateEventsConcurrently(t *testing.T) {
 		wg.Add(1)
 		go func(i int64) {
 			defer wg.Done()
-			event := &hd.EventModel{Event: hd.Event{ID: i, Name: fmt.Sprintf("Test Event %d", i)}}
+			event := &tp.EventModel{Event: tp.Event{ID: i, Name: fmt.Sprintf("Test Event %d", i)}}
 			err := repo.UpdateEvent(ctx, event)
 			assert.NoErrorf(t, err, "Error updating event %d: %v", i, err)
 		}(id)
@@ -223,7 +154,7 @@ func Test_DelEventsConcurrently(t *testing.T) {
 	ctx := context.Background()
 	ids := []int64{}
 	for i := 0; i < lenTest; i++ {
-		event := &hd.EventModel{Event: hd.Event{Name: fmt.Sprintf("Test Event %d", i)}}
+		event := &tp.EventModel{Event: tp.Event{Name: fmt.Sprintf("Test Event %d", i)}}
 		id, _ := repo.CreateEvent(ctx, event)
 		ids = append(ids, id)
 	}
@@ -243,34 +174,39 @@ func Test_DelEventsConcurrently(t *testing.T) {
 	assert.Zero(t, len(repo.Repo))
 }
 
-// // Проверяем функцию GetDay в конкурентном режиме.
-// func Test_GetDayConcurrently(t *testing.T) {
-// 	storage, _ := NewMemRepo()
-// 	repo := storage.(*MemRepo)
-// 	ctx := context.Background()
-// 	events := []hd.EventModel{
-// 		{Event: hd.Event{ID: 1, Name: "Event 1", Date: time.Date(2023, 5, 1, 10, 0, 0, 0, time.UTC)}},
-// 		{Event: hd.Event{ID: 2, Name: "Event 2", Date: time.Date(2023, 5, 2, 11, 0, 0, 0, time.UTC)}},
-// 		{Event: hd.Event{ID: 3, Name: "Event 3", Date: time.Date(2023, 5, 1, 12, 0, 0, 0, time.UTC)}},
-// 	}
-// 	for _, event := range events {
-// 		_, err := repo.CreateEvent(ctx, &event)
-// 		assert.NoErrorf(t, err, "Error creating event: %v", err)
-// 	}
+// Проверяем функцию GetEventsForTimeInterval в конкурентном режиме.
+func Test_GetEventsForTimeIntervalConcurrently(t *testing.T) {
+	storage, _ := NewMemRepo()
+	repo := storage.(*MemRepo)
+	ctx := context.Background()
+	events := []tp.EventModel{
+		{Event: tp.Event{ID: 1, Name: "Event 1", Date: time.Date(2023, 5, 1, 10, 0, 0, 0, time.UTC)}},
+		{Event: tp.Event{ID: 2, Name: "Event 2", Date: time.Date(2023, 5, 2, 11, 0, 0, 0, time.UTC)}},
+		{Event: tp.Event{ID: 3, Name: "Event 3", Date: time.Date(2023, 5, 1, 12, 0, 0, 0, time.UTC)}},
+		{Event: tp.Event{ID: 4, Name: "Event 4", Date: time.Date(2023, 5, 3, 13, 0, 0, 0, time.UTC)}},
+		{Event: tp.Event{ID: 5, Name: "Event 5", Date: time.Date(2023, 5, 1, 14, 0, 0, 0, time.UTC)}},
+	}
 
-// 	var wg sync.WaitGroup
-// 	for i := 0; i < 10; i++ {
-// 		wg.Add(1)
-// 		go func() {
-// 			defer wg.Done()
-// 			day := time.Date(2023, 5, 1, 0, 0, 0, 0, time.UTC)
-// 			dayEvents, err := repo.GetDay(ctx, day)
-// 			assert.NoErrorf(t, err, "Error getting events for day: %v", err)
-// 			assert.Equal(t, len(dayEvents), 2)
-// 			for _, event := range dayEvents {
-// 				assert.Equal(t, day.Day(), event.Date.Day())
-// 			}
-// 		}()
-// 	}
-// 	wg.Wait()
-// }
+	for _, event := range events {
+		_, err := repo.CreateEvent(ctx, &event)
+		assert.NoErrorf(t, err, "Error creating event: %v", err)
+	}
+
+	start := time.Date(2023, 5, 1, 0, 0, 0, 0, time.UTC)
+	end := time.Date(2023, 5, 2, 0, 0, 0, 0, time.UTC)
+
+	var wg sync.WaitGroup
+	for i := 0; i < 10; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			page, err := repo.GetEventsForTimeInterval(ctx, start, end, cm.Paginate{Page: 1, Size: 10})
+			assert.NoErrorf(t, err, "Error getting events for time interval: %v", err)
+			assert.Equal(t, len(page.Content), 3)
+			for _, event := range page.Content {
+				assert.True(t, event.Date.Equal(start) || event.Date.After(start) && event.Date.Before(end))
+			}
+		}()
+	}
+	wg.Wait()
+}

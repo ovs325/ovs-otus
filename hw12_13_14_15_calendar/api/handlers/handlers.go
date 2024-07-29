@@ -8,6 +8,7 @@ import (
 	"time"
 
 	cm "github.com/ovs325/ovs-otus/hw12_13_14_15_calendar/internal/common"
+	tp "github.com/ovs325/ovs-otus/hw12_13_14_15_calendar/internal/types"
 )
 
 type BusinessLogic interface {
@@ -23,33 +24,33 @@ func NewHandlersGroup(l AbstractLogic) Handlers {
 }
 
 type AbstractLogic interface {
-	CreateEventLogic(ctx context.Context, checkItem *EventRequest) (int, error)
-	UpdateEventLogic(ctx context.Context, checkItem *EventRequest) error
+	CreateEventLogic(ctx context.Context, checkItem *tp.EventRequest) (int, error)
+	UpdateEventLogic(ctx context.Context, checkItem *tp.EventRequest) error
 	DelEventLogic(ctx context.Context, id int64) error
 	GetDayLogic(
 		ctx context.Context,
 		date time.Time,
 		datePaginate cm.Paginate,
-	) (QueryPage[EventModel], error)
+	) (tp.QueryPage[tp.EventModel], error)
 	GetWeekLogic(
 		ctx context.Context,
 		date time.Time,
 		datePaginate cm.Paginate,
-	) (QueryPage[EventModel], error)
+	) (tp.QueryPage[tp.EventModel], error)
 	GetMonthLiogic(
 		ctx context.Context,
 		date time.Time,
 		datePaginate cm.Paginate,
-	) (QueryPage[EventModel], error)
+	) (tp.QueryPage[tp.EventModel], error)
 }
 
 // POST
-// В теле передаем структуру st.EventRequest.
+// В теле передаем структуру st.tp.EventRequest.
 
 // Создать событие.
 func (h *Handlers) CreateEventHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		checkItem := new(EventRequest)
+		checkItem := new(tp.EventRequest)
 		err := cm.Decode(r.Body, checkItem)
 		if err != nil {
 			ClientError(w, err.Error())
@@ -64,12 +65,12 @@ func (h *Handlers) CreateEventHandler() http.HandlerFunc {
 }
 
 // PATCH
-// В теле передаем структуру st.EventRequest.
+// В теле передаем структуру st.tp.EventRequest.
 
 // Редактировать событие.
 func (h *Handlers) UpdateEventHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		checkItem := new(EventRequest)
+		checkItem := new(tp.EventRequest)
 		err := cm.Decode(r.Body, checkItem)
 		if err != nil {
 			ClientError(w, err.Error())

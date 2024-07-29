@@ -56,10 +56,6 @@ func main() {
 
 	logic := bl.NewBusinessLogic(storage)
 
-	// calendar := ap.New(logg, storage)
-
-	// logg.Info("calendar is running...")
-
 	routes := rt.NewRouter(logg)
 	routes.AddRoutes(logic)
 

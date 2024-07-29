@@ -7,17 +7,18 @@ import (
 
 	hd "github.com/ovs325/ovs-otus/hw12_13_14_15_calendar/api/handlers"
 	cm "github.com/ovs325/ovs-otus/hw12_13_14_15_calendar/internal/common"
+	tp "github.com/ovs325/ovs-otus/hw12_13_14_15_calendar/internal/types"
 )
 
 type AbstractStorage interface {
-	CreateEvent(ctx context.Context, event *hd.EventModel) (id int64, err error)
-	UpdateEvent(ctx context.Context, event *hd.EventModel) error
+	CreateEvent(ctx context.Context, event *tp.EventModel) (id int64, err error)
+	UpdateEvent(ctx context.Context, event *tp.EventModel) error
 	DelEvent(ctx context.Context, id int64) error
 	GetEventsForTimeInterval(
 		ctx context.Context,
 		start, end time.Time,
 		datePaginate cm.Paginate,
-	) (hd.QueryPage[hd.EventModel], error)
+	) (tp.QueryPage[tp.EventModel], error)
 	Connect(ctx context.Context) error
 	Close() error
 }
@@ -30,21 +31,21 @@ func NewBusinessLogic(repo AbstractStorage) hd.AbstractLogic {
 	return &BusinessLogic{repo: repo}
 }
 
-func (b *BusinessLogic) CreateEventLogic(ctx context.Context, checkItem *hd.EventRequest) (int, error) {
+func (b *BusinessLogic) CreateEventLogic(ctx context.Context, checkItem *tp.EventRequest) (int, error) {
 	checkItem.ID = 0
 
-	event := hd.EventModel{}
+	event := tp.EventModel{}
 	event.GetModel(*checkItem)
 
 	id, err := b.repo.CreateEvent(ctx, &event)
 	return int(id), err
 }
 
-func (b *BusinessLogic) UpdateEventLogic(ctx context.Context, checkItem *hd.EventRequest) error {
+func (b *BusinessLogic) UpdateEventLogic(ctx context.Context, checkItem *tp.EventRequest) error {
 	if checkItem.ID == 0 {
 		return fmt.Errorf("the id must not be zero")
 	}
-	event := hd.EventModel{}
+	event := tp.EventModel{}
 	event.GetModel(*checkItem)
 	return b.repo.UpdateEvent(ctx, &event)
 }
@@ -58,7 +59,7 @@ func (b *BusinessLogic) GetDayLogic(
 	ctx context.Context,
 	date time.Time,
 	datePaginate cm.Paginate,
-) (hd.QueryPage[hd.EventModel], error) {
+) (tp.QueryPage[tp.EventModel], error) {
 	first := time.Date(date.Year(), date.Month(), date.Day(), 0, 0, 0, 0, date.Location())
 	last := first.AddDate(0, 0, 1).Add(-time.Nanosecond)
 	return b.repo.GetEventsForTimeInterval(ctx, first, last, datePaginate)
@@ -68,7 +69,7 @@ func (b *BusinessLogic) GetDayLogic(
 func (b *BusinessLogic) GetWeekLogic(ctx context.Context,
 	date time.Time,
 	datePaginate cm.Paginate,
-) (hd.QueryPage[hd.EventModel], error) {
+) (tp.QueryPage[tp.EventModel], error) {
 	first := date.AddDate(0, 0, -int(date.Weekday()))
 	last := first.AddDate(0, 0, 7).Add(-time.Nanosecond)
 	return b.repo.GetEventsForTimeInterval(ctx, first, last, datePaginate)
@@ -78,7 +79,7 @@ func (b *BusinessLogic) GetWeekLogic(ctx context.Context,
 func (b *BusinessLogic) GetMonthLiogic(ctx context.Context,
 	date time.Time,
 	datePaginate cm.Paginate,
-) (hd.QueryPage[hd.EventModel], error) {
+) (tp.QueryPage[tp.EventModel], error) {
 	first := time.Date(date.Year(), date.Month(), 1, 0, 0, 0, 0, date.Location())
 	last := first.AddDate(0, 1, 0).Add(-time.Nanosecond)
 	return b.repo.GetEventsForTimeInterval(ctx, first, last, datePaginate)
