@@ -54,10 +54,8 @@ func main() {
 		return
 	}
 
-	logic := bl.NewBusinessLogic(storage)
-
 	routes := rt.NewRouter(logg)
-	routes.AddRoutes(logic)
+	routes.AddRoutes(bl.NewBusinessLogic(storage))
 
 	server := hp.NewServer(logg)
 

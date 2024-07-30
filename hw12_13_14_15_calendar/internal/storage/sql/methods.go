@@ -14,7 +14,7 @@ import (
 func (p *PgRepo) CreateEvent(ctx context.Context, event *tp.EventModel) (id int64, err error) {
 	q := `
 INSERT INTO events (name, date, expiry, description, user_id, time_alarm) 
-VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id`
+VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`
 	row := p.DB.QueryRow(
 		ctx, q,
 		event.Name,

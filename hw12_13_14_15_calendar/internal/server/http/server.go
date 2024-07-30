@@ -17,9 +17,6 @@ type Server struct {
 	srv *http.Server
 }
 
-type Application interface { // TODO
-}
-
 func NewServer(logger lg.Logger) *Server {
 	return &Server{log: logger}
 }

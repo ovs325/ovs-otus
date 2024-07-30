@@ -8,6 +8,7 @@ import (
 	"time"
 
 	cm "github.com/ovs325/ovs-otus/hw12_13_14_15_calendar/internal/common"
+	lg "github.com/ovs325/ovs-otus/hw12_13_14_15_calendar/internal/logger"
 	tp "github.com/ovs325/ovs-otus/hw12_13_14_15_calendar/internal/types"
 )
 
@@ -16,11 +17,12 @@ type BusinessLogic interface {
 }
 
 type Handlers struct {
+	log   lg.Logger
 	logic AbstractLogic
 }
 
-func NewHandlersGroup(l AbstractLogic) Handlers {
-	return Handlers{logic: l}
+func NewHandlersGroup(logic AbstractLogic, log lg.Logger) Handlers {
+	return Handlers{logic: logic, log: log}
 }
 
 type AbstractLogic interface {
@@ -53,11 +55,13 @@ func (h *Handlers) CreateEventHandler() http.HandlerFunc {
 		checkItem := new(tp.EventRequest)
 		err := cm.Decode(r.Body, checkItem)
 		if err != nil {
+			h.log.Error("ошибка клиента", "error", err.Error())
 			ClientError(w, err.Error())
 			return
 		}
 		id, err := h.logic.CreateEventLogic(r.Context(), checkItem)
 		if err != nil {
+			h.log.Error("ошибка сервера", "error", err.Error())
 			ServerError(w, err.Error())
 		}
 		cm.NewResponse(w).Text(strconv.Itoa(id))
@@ -73,10 +77,12 @@ func (h *Handlers) UpdateEventHandler() http.HandlerFunc {
 		checkItem := new(tp.EventRequest)
 		err := cm.Decode(r.Body, checkItem)
 		if err != nil {
+			h.log.Error("ошибка клиента", "error", err.Error())
 			ClientError(w, err.Error())
 			return
 		}
 		if err = h.logic.UpdateEventLogic(r.Context(), checkItem); err != nil {
+			h.log.Error("ошибка сервера", "error", err.Error())
 			ServerError(w, err.Error())
 		}
 	}
@@ -90,10 +96,12 @@ func (h *Handlers) DelEventHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id, err := cm.ParamInt(r, "id")
 		if err != nil {
+			h.log.Error("ошибка клиента", "error", err.Error())
 			ClientError(w, fmt.Sprintf("неправильный формат параметра id: %s", err.Error()))
 			return
 		}
 		if err = h.logic.DelEventLogic(r.Context(), int64(id)); err != nil {
+			h.log.Error("ошибка сервера", "error", err.Error())
 			ServerError(w, err.Error())
 		}
 	}
@@ -111,12 +119,14 @@ func (h *Handlers) GetDayHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		date, err := cm.ParamTime(r, "date")
 		if err != nil {
-			ClientError(w, fmt.Sprintf("неправильный формат даты: %s", err.Error()))
+			h.log.Error("ошибка клиента", "error", err.Error())
+			ClientError(w, fmt.Sprintf("не удалось получить дату: %s", err.Error()))
 			return
 		}
 		datePaginate := cm.ParamPaginate(r)
 		response, err := h.logic.GetDayLogic(r.Context(), date, datePaginate)
 		if err != nil {
+			h.log.Error("ошибка сервера", "error", err.Error())
 			ServerError(w, err.Error())
 		}
 		cm.NewResponse(w).JSONResp(response)
@@ -135,12 +145,14 @@ func (h *Handlers) GetWeekHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		date, err := cm.ParamTime(r, "date")
 		if err != nil {
-			ClientError(w, fmt.Sprintf("неправильный формат даты: %s", err.Error()))
+			h.log.Error("ошибка клиента", "error", err.Error())
+			ClientError(w, fmt.Sprintf("не удалось получить дату: %s", err.Error()))
 			return
 		}
 		datePaginate := cm.ParamPaginate(r)
 		response, err := h.logic.GetWeekLogic(r.Context(), date, datePaginate)
 		if err != nil {
+			h.log.Error("ошибка сервера", "error", err.Error())
 			ServerError(w, err.Error())
 		}
 		cm.NewResponse(w).JSONResp(response)
@@ -159,12 +171,14 @@ func (h *Handlers) GetMonthHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		date, err := cm.ParamTime(r, "date")
 		if err != nil {
-			ClientError(w, fmt.Sprintf("неправильный формат даты: %s", err.Error()))
+			h.log.Error("ошибка клиента", "error", err.Error())
+			ClientError(w, fmt.Sprintf("не удалось получить дату: %s", err.Error()))
 			return
 		}
 		datePaginate := cm.ParamPaginate(r)
 		response, err := h.logic.GetMonthLiogic(r.Context(), date, datePaginate)
 		if err != nil {
+			h.log.Error("ошибка сервера", "error", err.Error())
 			ServerError(w, err.Error())
 		}
 		cm.NewResponse(w).JSONResp(response)
