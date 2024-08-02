@@ -38,4 +38,24 @@ lint: install-lint-deps
 postgr: 
 	docker run --rm -d -e POSTGRES_PASSWORD=pass -e POSTGRES_USER=user -e POSTGRES_DB=calendar -p 7777:5432 postgres
 
+install_prot: 
+	sudo apt install protobuf-compiler
+	go get google.golang.org/protobuf/cmd/protoc-gen-go@latest
+	go get google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
+	go get github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-grpc-gateway
+	go get github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-openapiv2/internal/genopenapi@latest
 
+
+install_bin:
+	# go install github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-grpc-gateway 
+	# go install github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-openapiv2 
+	go install google.golang.org/protobuf/cmd/protoc-gen-go@latest 
+	go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
+
+compile:
+	protoc -I . --go_out=./grpc --go_opt=paths=import --go-grpc_out=./grpc --go-grpc_opt=paths=import ./protobuf/event_service.proto
+	protoc -I . --grpc-gateway_out=./grpc --grpc-gateway_opt=paths=import --grpc-gateway_opt=generate_unbound_methods=true ./protobuf/event_service.proto
+	protoc -I . --openapiv2_out ./swagger ./protobuf/event_service.proto
+
+prot:
+	protoc --proto_path=. --go-grpc_out=./grpc --go_out=./grpc --go-grpc_opt=paths=import --go_opt=paths=import ./protobuf/event_service.proto
