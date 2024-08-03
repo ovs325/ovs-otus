@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.5.1
 // - protoc             v5.27.3
-// source: protobuf/event_service.proto
+// source: proto/event_service.proto
 
 package event_service
 
@@ -307,5 +307,5 @@ var EventService_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "protobuf/event_service.proto",
+	Metadata: "proto/event_service.proto",
 }

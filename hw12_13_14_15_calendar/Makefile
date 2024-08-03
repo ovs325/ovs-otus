@@ -47,15 +47,15 @@ install_prot:
 
 
 install_bin:
-	# go install github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-grpc-gateway 
-	# go install github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-openapiv2 
+	go install github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-grpc-gateway 
+	go install github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-openapiv2 
 	go install google.golang.org/protobuf/cmd/protoc-gen-go@latest 
 	go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
 
 compile:
-	protoc -I . --go_out=./grpc --go_opt=paths=import --go-grpc_out=./grpc --go-grpc_opt=paths=import ./protobuf/event_service.proto
-	protoc -I . --grpc-gateway_out=./grpc --grpc-gateway_opt=paths=import --grpc-gateway_opt=generate_unbound_methods=true ./protobuf/event_service.proto
-	protoc -I . --openapiv2_out ./swagger ./protobuf/event_service.proto
+	protoc -I . --go_out=./grpc --go_opt=paths=import --go-grpc_out=./grpc --go-grpc_opt=paths=import ./proto/event_service.proto
+	protoc -I . --grpc-gateway_out=./grpc --grpc-gateway_opt=paths=import --grpc-gateway_opt=generate_unbound_methods=true ./proto/event_service.proto
+	protoc -I . -I ./google/api/ --openapiv2_out ./ ./proto/event_service.proto
 
 prot:
-	protoc --proto_path=. --go-grpc_out=./grpc --go_out=./grpc --go-grpc_opt=paths=import --go_opt=paths=import ./protobuf/event_service.proto
+	protoc --proto_path=. --go-grpc_out=./grpc --go_out=./grpc --go-grpc_opt=paths=import --go_opt=paths=import ./proto/event_service.proto

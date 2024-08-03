@@ -19,10 +19,13 @@ message CreateEventRequest {
 
 message CreateEventResponse {
     int64 id = 1; 
+    bool success = 2; 
 }
 
 message UpdateEventRequest {
     Event event = 1; 
+    int32 n_day_alarm = 2; 
+
 }
 
 message UpdateEventResponse {
@@ -30,7 +33,7 @@ message UpdateEventResponse {
 }
 
 message DeleteEventRequest {
-    bool success = 1; 
+    int64 id = 1;
 }
 
 message DeleteEventResponse {
@@ -45,6 +48,7 @@ message GetEventsRequest {
 
 message GetEventsResponse {
     repeated Event events = 1; 
+    bool success = 2;
 }
 
 service EventService {
@@ -64,25 +68,25 @@ service EventService {
     
     rpc DeleteEvent(DeleteEventRequest) returns (DeleteEventResponse) {
         option (google.api.http) = {
-            delete: "/events/{id}"
+            delete: "/events"
         };
     }
     
     rpc GetEventsDay(GetEventsRequest) returns (GetEventsResponse) {
         option (google.api.http) = {
-            get: "/events"
+            get: "/events/day"
         };
     }
 
     rpc GetEventsWeek(GetEventsRequest) returns (GetEventsResponse) {
         option (google.api.http) = {
-            get: "/events"
+            get: "/events/week"
         };
     }
 
     rpc GetEventsMonth(GetEventsRequest) returns (GetEventsResponse) {
         option (google.api.http) = {
-            get: "/events"
+            get: "/events/month"
         };
     }
 
