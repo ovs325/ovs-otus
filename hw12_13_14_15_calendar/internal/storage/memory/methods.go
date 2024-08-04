@@ -3,13 +3,15 @@ package memory
 import (
 	"context"
 	"fmt"
+	"sort"
 	"time"
 
-	st "github.com/ovs325/ovs-otus/hw12_13_14_15_calendar/internal/storage"
+	cm "github.com/ovs325/ovs-otus/hw12_13_14_15_calendar/internal/common"
+	tp "github.com/ovs325/ovs-otus/hw12_13_14_15_calendar/internal/types"
 )
 
 // Создать событие.
-func (r *MemRepo) CreateEvent(_ context.Context, event *st.EventModel) (id int64, err error) {
+func (r *MemRepo) CreateEvent(_ context.Context, event *tp.EventModel) (id int64, err error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	r.LastID++
@@ -20,7 +22,7 @@ func (r *MemRepo) CreateEvent(_ context.Context, event *st.EventModel) (id int64
 }
 
 // Обновить событие.
-func (r *MemRepo) UpdateEvent(_ context.Context, event *st.EventModel) error {
+func (r *MemRepo) UpdateEvent(_ context.Context, event *tp.EventModel) error {
 	if event.ID == 0 {
 		return fmt.Errorf("the id must not be zero")
 	}
@@ -41,30 +43,13 @@ func (r *MemRepo) DelEvent(_ context.Context, id int64) error {
 	return nil
 }
 
-// Список Событий На День.
-func (r *MemRepo) GetDay(ctx context.Context, date time.Time) ([]st.EventModel, error) {
-	first := time.Date(date.Year(), date.Month(), date.Day(), 0, 0, 0, 0, date.Location())
-	last := first.AddDate(0, 0, 1).Add(-time.Nanosecond)
-	return r.getEventsForTimeInterval(ctx, first, last)
-}
-
-// Список Событий На Неделю.
-func (r *MemRepo) GetWeek(ctx context.Context, date time.Time) ([]st.EventModel, error) {
-	first := date.AddDate(0, 0, -int(date.Weekday()))
-	last := first.AddDate(0, 0, 7).Add(-time.Nanosecond)
-	return r.getEventsForTimeInterval(ctx, first, last)
-}
-
-// СписокСобытийНaМесяц (дата начала месяца).
-func (r *MemRepo) GetMonth(ctx context.Context, date time.Time) ([]st.EventModel, error) {
-	first := time.Date(date.Year(), date.Month(), 1, 0, 0, 0, 0, date.Location())
-	last := first.AddDate(0, 1, 0).Add(-time.Nanosecond)
-	return r.getEventsForTimeInterval(ctx, first, last)
-}
-
 // Список Событий в промежутке дат.
-func (r *MemRepo) getEventsForTimeInterval(_ context.Context, start, end time.Time) ([]st.EventModel, error) {
-	var events []st.EventModel
+func (r *MemRepo) GetEventsForTimeInterval(
+	_ context.Context,
+	start, end time.Time,
+	datePaginate cm.Paginate,
+) (tp.QueryPage[tp.EventModel], error) {
+	var events []tp.EventModel
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 	for _, event := range r.Repo {
@@ -72,5 +57,30 @@ func (r *MemRepo) getEventsForTimeInterval(_ context.Context, start, end time.Ti
 			events = append(events, event)
 		}
 	}
-	return events, nil
+	sort.Slice(events, func(i, j int) bool {
+		return events[i].ID < events[j].ID
+	})
+
+	lenEv := len(events)
+	if datePaginate.Page <= 0 || datePaginate.Size <= 0 {
+		return tp.QueryPage[tp.EventModel]{
+			Content: events,
+			Page:    datePaginate.Page,
+			Total:   int64(lenEv),
+		}, nil
+	}
+
+	startIndex := (datePaginate.Page - 1) * datePaginate.Size
+	if startIndex < 0 {
+		startIndex = 0
+	}
+	endIndex := startIndex + datePaginate.Size
+	if endIndex > lenEv {
+		endIndex = lenEv
+	}
+	return tp.QueryPage[tp.EventModel]{
+		Content: events[startIndex:endIndex],
+		Page:    datePaginate.Page,
+		Total:   int64(lenEv),
+	}, nil
 }

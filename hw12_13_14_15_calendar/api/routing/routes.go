@@ -33,8 +33,13 @@ func (r Router) add(method, path string, handler http.Handler) {
 	}
 }
 
-func (r Router) AddRoutes() {
-	h := hd.NewHandlersGroup()
+func (r Router) AddRoutes(logic hd.AbstractLogic) {
+	h := hd.NewHandlersGroup(logic, r.Log)
 
-	r.add("GET", "/greting", LogRequest(r.Log, h.HelloHandler()))
+	r.add("POST", "/event/new", LogRequest(r.Log, h.CreateEventHandler()))
+	r.add("PATCH", "/event/update", LogRequest(r.Log, h.UpdateEventHandler()))
+	r.add("DELETE", "/event/del", LogRequest(r.Log, h.DelEventHandler()))
+	r.add("GET", "/event/day", LogRequest(r.Log, h.GetDayHandler()))
+	r.add("GET", "/event/week", LogRequest(r.Log, h.GetWeekHandler()))
+	r.add("GET", "/event/month", LogRequest(r.Log, h.GetMonthHandler()))
 }

@@ -5,14 +5,16 @@ import (
 	"fmt"
 	"time"
 
-	st "github.com/ovs325/ovs-otus/hw12_13_14_15_calendar/internal/storage"
+	"github.com/jackc/pgx/v4"
+	cm "github.com/ovs325/ovs-otus/hw12_13_14_15_calendar/internal/common"
+	tp "github.com/ovs325/ovs-otus/hw12_13_14_15_calendar/internal/types"
 )
 
 // Создать событие.
-func (p *PgRepo) CreateEvent(ctx context.Context, event *st.EventModel) (id int64, err error) {
+func (p *PgRepo) CreateEvent(ctx context.Context, event *tp.EventModel) (id int64, err error) {
 	q := `
 INSERT INTO events (name, date, expiry, description, user_id, time_alarm) 
-VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id`
+VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`
 	row := p.DB.QueryRow(
 		ctx, q,
 		event.Name,
@@ -30,10 +32,7 @@ VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id`
 }
 
 // Обновить событие.
-func (p *PgRepo) UpdateEvent(ctx context.Context, event *st.EventModel) error {
-	if event.ID == 0 {
-		return fmt.Errorf("the id must not be zero")
-	}
+func (p *PgRepo) UpdateEvent(ctx context.Context, event *tp.EventModel) error {
 	if ok, err := p.isExist(ctx, event.ID); !ok {
 		if err != nil {
 			return fmt.Errorf("error checking for an update record")
@@ -78,51 +77,56 @@ func (p *PgRepo) DelEvent(ctx context.Context, id int64) error {
 	return nil
 }
 
-// Список Событий На День.
-func (p *PgRepo) GetDay(ctx context.Context, date time.Time) ([]st.EventModel, error) {
-	first := time.Date(date.Year(), date.Month(), date.Day(), 0, 0, 0, 0, date.Location())
-	last := first.AddDate(0, 0, 1).Add(-time.Nanosecond)
-	return p.getEventsForTimeInterval(ctx, first, last)
-}
-
-// Список Событий На Неделю.
-func (p *PgRepo) GetWeek(ctx context.Context, date time.Time) ([]st.EventModel, error) {
-	first := date.AddDate(0, 0, -int(date.Weekday()))
-	last := first.AddDate(0, 0, 7).Add(-time.Nanosecond)
-	return p.getEventsForTimeInterval(ctx, first, last)
-}
-
-// СписокСобытийНaМесяц (дата начала месяца).
-func (p *PgRepo) GetMonth(ctx context.Context, date time.Time) ([]st.EventModel, error) {
-	first := time.Date(date.Year(), date.Month(), 1, 0, 0, 0, 0, date.Location())
-	last := first.AddDate(0, 1, 0).Add(-time.Nanosecond)
-	return p.getEventsForTimeInterval(ctx, first, last)
-}
-
 // Список Событий в промежутке дат.
-func (p *PgRepo) getEventsForTimeInterval(ctx context.Context, start, end time.Time) ([]st.EventModel, error) {
-	q := `SELECT * FROM "events" WHERE "date" BETWEEN $1 AND $2`
-
-	rows, err := p.DB.Query(ctx, q, start, end)
+func (p *PgRepo) GetEventsForTimeInterval(
+	ctx context.Context,
+	start, end time.Time,
+	datePaginate cm.Paginate,
+) (tp.QueryPage[tp.EventModel], error) {
+	var err error
+	var rows pgx.Rows
+	if datePaginate.Page <= 0 || datePaginate.Size <= 0 {
+		q := `SELECT * FROM "events" WHERE "date" BETWEEN $1 AND $2 ORDER BY "id" ASC`
+		rows, err = p.DB.Query(ctx, q, start, end)
+	} else {
+		q := `SELECT * FROM "events" WHERE "date" BETWEEN $1 AND $2 ORDER BY "id" ASC LIMIT $3 OFFSET $4`
+		offset := (datePaginate.Page - 1) * datePaginate.Size
+		rows, err = p.DB.Query(ctx, q, start, end, datePaginate.Size, offset)
+	}
 	if err != nil {
-		return nil, fmt.Errorf("error when receiving events in a time interval (%v; %v): %w", start, end, err)
+		return tp.QueryPage[tp.EventModel]{},
+			fmt.Errorf("error when receiving events in a time interval (%v; %v): %w", start, end, err)
 	}
 	defer rows.Close()
 
-	var events []st.EventModel
+	var events []tp.EventModel
 	for rows.Next() {
-		var event st.EventModel
+		var event tp.EventModel
 		if err := rows.Scan(
 			&event.ID, &event.Name, &event.Date, &event.Expiry, &event.Description, &event.UserID, &event.TimeAlarm,
 		); err != nil {
-			return nil, fmt.Errorf("error scanning event row: %w", err)
+			return tp.QueryPage[tp.EventModel]{},
+				fmt.Errorf("error scanning event row: %w", err)
 		}
 		events = append(events, event)
 	}
 	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("error iterating over rows: %w", err)
+		return tp.QueryPage[tp.EventModel]{},
+			fmt.Errorf("error iterating over rows: %w", err)
 	}
-	return events, nil
+	// Подсчет количества строк
+	countQ := `SELECT COUNT(*) FROM "events" WHERE "date" BETWEEN $1 AND $2`
+	var total int
+	if err := p.DB.QueryRow(ctx, countQ, start, end).Scan(&total); err != nil {
+		return tp.QueryPage[tp.EventModel]{},
+			fmt.Errorf("error counting events in a time interval (%v; %v): %w", start, end, err)
+	}
+
+	return tp.QueryPage[tp.EventModel]{
+		Content: events,
+		Page:    datePaginate.Page,
+		Total:   int64(total),
+	}, nil
 }
 
 // Проверка на существование события с заданным id.
