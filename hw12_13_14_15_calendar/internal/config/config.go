@@ -7,11 +7,12 @@ import (
 )
 
 type Config struct {
-	Server ServerConf   `mapstructure:"server"`
-	Logger LoggerConf   `mapstructure:"logger"`
-	DB     DBConf       `mapstructure:"database"`
-	RxCnf  ReindexerCnf `mapstructure:"reindexer"`
-	PgCnf  PostgresCnf  `mapstructure:"postgres"`
+	HttpServer  HttpServerConf  `mapstructure:"http_server"`
+	GrpcServer  GrpcServerConf  `mapstructure:"grpc_server"`
+	SwaggServer SwaggServerConf `mapstructure:"swagger_server"`
+	Logger      LoggerConf      `mapstructure:"logger"`
+	DB          DBConf          `mapstructure:"database"`
+	PgCnf       PostgresCnf     `mapstructure:"postgres"`
 }
 
 func NewConfig(path string) (Config, error) {
@@ -27,15 +28,17 @@ func NewConfig(path string) (Config, error) {
 	viper.SetDefault("postgres.user", "user")
 	viper.SetDefault("postgres.password", "pass")
 
-	viper.SetDefault("reindexer.host", "localhost")
-	viper.SetDefault("reindexer.port", 7778)
-	viper.SetDefault("reindexer.namespace", "events")
-
 	viper.SetDefault("database.isPostgres", true)
 	viper.SetDefault("database.database", "calendar")
 
-	viper.SetDefault("server.host", "localhost")
-	viper.SetDefault("server.port", 7779)
+	viper.SetDefault("http_server.host", "localhost")
+	viper.SetDefault("http_server.port", 7779)
+
+	viper.SetDefault("grpc_server.host", "localhost")
+	viper.SetDefault("grpc_server.port", 7780)
+
+	viper.SetDefault("swagger_server.host", "localhost")
+	viper.SetDefault("swagger_server.port", 7781)
 
 	err := viper.ReadInConfig()
 	if err != nil {

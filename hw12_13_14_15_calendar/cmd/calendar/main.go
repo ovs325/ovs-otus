@@ -14,6 +14,7 @@ import (
 	bl "github.com/ovs325/ovs-otus/hw12_13_14_15_calendar/internal/business_logic"
 	cf "github.com/ovs325/ovs-otus/hw12_13_14_15_calendar/internal/config"
 	lg "github.com/ovs325/ovs-otus/hw12_13_14_15_calendar/internal/logger"
+	gr "github.com/ovs325/ovs-otus/hw12_13_14_15_calendar/internal/server/grpc"
 	hp "github.com/ovs325/ovs-otus/hw12_13_14_15_calendar/internal/server/http"
 	mm "github.com/ovs325/ovs-otus/hw12_13_14_15_calendar/internal/storage/memory"
 	sq "github.com/ovs325/ovs-otus/hw12_13_14_15_calendar/internal/storage/sql"
@@ -54,10 +55,12 @@ func main() {
 		return
 	}
 
+	logic := bl.NewBusinessLogic(storage)
 	routes := rt.NewRouter(logg)
-	routes.AddRoutes(bl.NewBusinessLogic(storage))
+	routes.AddRoutes(logic)
 
-	server := hp.NewServer(logg)
+	httpServer := hp.NewHttpServer(logg)
+	grpcServer := gr.NewGrpcServer(logic, logg)
 
 	// init graceful shutdown.
 	defer func() {
@@ -69,8 +72,15 @@ func main() {
 		}
 		ctxtime, canceltime := context.WithTimeout(context.Background(), time.Second*3)
 		defer canceltime()
-		if err := server.Stop(ctxtime); err != nil {
-			logg.Error("failed to stop http server", "err", err.Error())
+		errGr := grpcServer.Stop()
+		if errGr != nil {
+			logg.Error("failed to stop grpc-server", "err", err.Error())
+		}
+		errHttp := httpServer.Stop(ctxtime)
+		if errHttp != nil {
+			logg.Error("failed to stop http-server", "err", err.Error())
+		}
+		if errGr != nil || errHttp != nil {
 			os.Exit(1)
 		}
 		fmt.Println("Microservice has closed!!")
@@ -89,7 +99,10 @@ func main() {
 	)
 
 	go func() {
-		errCh <- server.Start(ctx, &config, *routes)
+		errCh <- httpServer.Start(ctx, &config, *routes)
+	}()
+	go func() {
+		errCh <- grpcServer.Start(&config)
 	}()
 
 	select {

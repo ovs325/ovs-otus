@@ -39,7 +39,7 @@ type AbstractLogic interface {
 		date time.Time,
 		datePaginate cm.Paginate,
 	) (tp.QueryPage[tp.EventModel], error)
-	GetMonthLiogic(
+	GetMonthLogic(
 		ctx context.Context,
 		date time.Time,
 		datePaginate cm.Paginate,
@@ -61,7 +61,7 @@ func (h *Handlers) CreateEventHandler() http.HandlerFunc {
 		}
 		id, err := h.logic.CreateEventLogic(r.Context(), checkItem)
 		if err != nil {
-			h.log.Error("ошибка сервера", "error", err.Error())
+			h.log.Error("ошибка http-сервера", "error", err.Error())
 			ServerError(w, err.Error())
 		}
 		cm.NewResponse(w).Text(strconv.Itoa(id))
@@ -82,7 +82,7 @@ func (h *Handlers) UpdateEventHandler() http.HandlerFunc {
 			return
 		}
 		if err = h.logic.UpdateEventLogic(r.Context(), checkItem); err != nil {
-			h.log.Error("ошибка сервера", "error", err.Error())
+			h.log.Error("ошибка http-сервера", "error", err.Error())
 			ServerError(w, err.Error())
 		}
 	}
@@ -101,7 +101,7 @@ func (h *Handlers) DelEventHandler() http.HandlerFunc {
 			return
 		}
 		if err = h.logic.DelEventLogic(r.Context(), int64(id)); err != nil {
-			h.log.Error("ошибка сервера", "error", err.Error())
+			h.log.Error("ошибка http-сервера", "error", err.Error())
 			ServerError(w, err.Error())
 		}
 	}
@@ -126,7 +126,7 @@ func (h *Handlers) GetDayHandler() http.HandlerFunc {
 		datePaginate := cm.ParamPaginate(r)
 		response, err := h.logic.GetDayLogic(r.Context(), date, datePaginate)
 		if err != nil {
-			h.log.Error("ошибка сервера", "error", err.Error())
+			h.log.Error("ошибка http-сервера", "error", err.Error())
 			ServerError(w, err.Error())
 		}
 		cm.NewResponse(w).JSONResp(response)
@@ -152,7 +152,7 @@ func (h *Handlers) GetWeekHandler() http.HandlerFunc {
 		datePaginate := cm.ParamPaginate(r)
 		response, err := h.logic.GetWeekLogic(r.Context(), date, datePaginate)
 		if err != nil {
-			h.log.Error("ошибка сервера", "error", err.Error())
+			h.log.Error("ошибка http-сервера", "error", err.Error())
 			ServerError(w, err.Error())
 		}
 		cm.NewResponse(w).JSONResp(response)
@@ -176,9 +176,9 @@ func (h *Handlers) GetMonthHandler() http.HandlerFunc {
 			return
 		}
 		datePaginate := cm.ParamPaginate(r)
-		response, err := h.logic.GetMonthLiogic(r.Context(), date, datePaginate)
+		response, err := h.logic.GetMonthLogic(r.Context(), date, datePaginate)
 		if err != nil {
-			h.log.Error("ошибка сервера", "error", err.Error())
+			h.log.Error("ошибка http-сервера", "error", err.Error())
 			ServerError(w, err.Error())
 		}
 		cm.NewResponse(w).JSONResp(response)

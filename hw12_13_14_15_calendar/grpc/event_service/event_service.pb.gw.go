@@ -36,7 +36,7 @@ var (
 )
 
 func request_EventService_CreateEvent_0(ctx context.Context, marshaler runtime.Marshaler, client EventServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq CreateEventRequest
+	var protoReq BodyEventRequest
 	var metadata runtime.ServerMetadata
 
 	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq.Event); err != nil && err != io.EOF {
@@ -56,7 +56,7 @@ func request_EventService_CreateEvent_0(ctx context.Context, marshaler runtime.M
 }
 
 func local_request_EventService_CreateEvent_0(ctx context.Context, marshaler runtime.Marshaler, server EventServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq CreateEventRequest
+	var protoReq BodyEventRequest
 	var metadata runtime.ServerMetadata
 
 	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq.Event); err != nil && err != io.EOF {
@@ -80,7 +80,7 @@ var (
 )
 
 func request_EventService_UpdateEvent_0(ctx context.Context, marshaler runtime.Marshaler, client EventServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq UpdateEventRequest
+	var protoReq BodyEventRequest
 	var metadata runtime.ServerMetadata
 
 	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq.Event); err != nil && err != io.EOF {
@@ -100,7 +100,7 @@ func request_EventService_UpdateEvent_0(ctx context.Context, marshaler runtime.M
 }
 
 func local_request_EventService_UpdateEvent_0(ctx context.Context, marshaler runtime.Marshaler, server EventServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq UpdateEventRequest
+	var protoReq BodyEventRequest
 	var metadata runtime.ServerMetadata
 
 	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq.Event); err != nil && err != io.EOF {

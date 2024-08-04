@@ -31,8 +31,8 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type EventServiceClient interface {
-	CreateEvent(ctx context.Context, in *CreateEventRequest, opts ...grpc.CallOption) (*CreateEventResponse, error)
-	UpdateEvent(ctx context.Context, in *UpdateEventRequest, opts ...grpc.CallOption) (*UpdateEventResponse, error)
+	CreateEvent(ctx context.Context, in *BodyEventRequest, opts ...grpc.CallOption) (*CreateEventResponse, error)
+	UpdateEvent(ctx context.Context, in *BodyEventRequest, opts ...grpc.CallOption) (*UpdateEventResponse, error)
 	DeleteEvent(ctx context.Context, in *DeleteEventRequest, opts ...grpc.CallOption) (*DeleteEventResponse, error)
 	GetEventsDay(ctx context.Context, in *GetEventsRequest, opts ...grpc.CallOption) (*GetEventsResponse, error)
 	GetEventsWeek(ctx context.Context, in *GetEventsRequest, opts ...grpc.CallOption) (*GetEventsResponse, error)
@@ -47,7 +47,7 @@ func NewEventServiceClient(cc grpc.ClientConnInterface) EventServiceClient {
 	return &eventServiceClient{cc}
 }
 
-func (c *eventServiceClient) CreateEvent(ctx context.Context, in *CreateEventRequest, opts ...grpc.CallOption) (*CreateEventResponse, error) {
+func (c *eventServiceClient) CreateEvent(ctx context.Context, in *BodyEventRequest, opts ...grpc.CallOption) (*CreateEventResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(CreateEventResponse)
 	err := c.cc.Invoke(ctx, EventService_CreateEvent_FullMethodName, in, out, cOpts...)
@@ -57,7 +57,7 @@ func (c *eventServiceClient) CreateEvent(ctx context.Context, in *CreateEventReq
 	return out, nil
 }
 
-func (c *eventServiceClient) UpdateEvent(ctx context.Context, in *UpdateEventRequest, opts ...grpc.CallOption) (*UpdateEventResponse, error) {
+func (c *eventServiceClient) UpdateEvent(ctx context.Context, in *BodyEventRequest, opts ...grpc.CallOption) (*UpdateEventResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(UpdateEventResponse)
 	err := c.cc.Invoke(ctx, EventService_UpdateEvent_FullMethodName, in, out, cOpts...)
@@ -111,8 +111,8 @@ func (c *eventServiceClient) GetEventsMonth(ctx context.Context, in *GetEventsRe
 // All implementations must embed UnimplementedEventServiceServer
 // for forward compatibility.
 type EventServiceServer interface {
-	CreateEvent(context.Context, *CreateEventRequest) (*CreateEventResponse, error)
-	UpdateEvent(context.Context, *UpdateEventRequest) (*UpdateEventResponse, error)
+	CreateEvent(context.Context, *BodyEventRequest) (*CreateEventResponse, error)
+	UpdateEvent(context.Context, *BodyEventRequest) (*UpdateEventResponse, error)
 	DeleteEvent(context.Context, *DeleteEventRequest) (*DeleteEventResponse, error)
 	GetEventsDay(context.Context, *GetEventsRequest) (*GetEventsResponse, error)
 	GetEventsWeek(context.Context, *GetEventsRequest) (*GetEventsResponse, error)
@@ -127,10 +127,10 @@ type EventServiceServer interface {
 // pointer dereference when methods are called.
 type UnimplementedEventServiceServer struct{}
 
-func (UnimplementedEventServiceServer) CreateEvent(context.Context, *CreateEventRequest) (*CreateEventResponse, error) {
+func (UnimplementedEventServiceServer) CreateEvent(context.Context, *BodyEventRequest) (*CreateEventResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateEvent not implemented")
 }
-func (UnimplementedEventServiceServer) UpdateEvent(context.Context, *UpdateEventRequest) (*UpdateEventResponse, error) {
+func (UnimplementedEventServiceServer) UpdateEvent(context.Context, *BodyEventRequest) (*UpdateEventResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdateEvent not implemented")
 }
 func (UnimplementedEventServiceServer) DeleteEvent(context.Context, *DeleteEventRequest) (*DeleteEventResponse, error) {
@@ -167,7 +167,7 @@ func RegisterEventServiceServer(s grpc.ServiceRegistrar, srv EventServiceServer)
 }
 
 func _EventService_CreateEvent_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(CreateEventRequest)
+	in := new(BodyEventRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -179,13 +179,13 @@ func _EventService_CreateEvent_Handler(srv interface{}, ctx context.Context, dec
 		FullMethod: EventService_CreateEvent_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(EventServiceServer).CreateEvent(ctx, req.(*CreateEventRequest))
+		return srv.(EventServiceServer).CreateEvent(ctx, req.(*BodyEventRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _EventService_UpdateEvent_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(UpdateEventRequest)
+	in := new(BodyEventRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -197,7 +197,7 @@ func _EventService_UpdateEvent_Handler(srv interface{}, ctx context.Context, dec
 		FullMethod: EventService_UpdateEvent_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(EventServiceServer).UpdateEvent(ctx, req.(*UpdateEventRequest))
+		return srv.(EventServiceServer).UpdateEvent(ctx, req.(*BodyEventRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }

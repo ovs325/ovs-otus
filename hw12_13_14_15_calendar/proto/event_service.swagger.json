@@ -300,6 +300,17 @@
         }
       }
     },
+    "eventEventModel": {
+      "type": "object",
+      "properties": {
+        "event": {
+          "$ref": "#/definitions/eventEvent"
+        },
+        "timeAlarm": {
+          "type": "string"
+        }
+      }
+    },
     "eventGetEventsResponse": {
       "type": "object",
       "properties": {
@@ -307,7 +318,7 @@
           "type": "array",
           "items": {
             "type": "object",
-            "$ref": "#/definitions/eventEvent"
+            "$ref": "#/definitions/eventEventModel"
           }
         },
         "success": {

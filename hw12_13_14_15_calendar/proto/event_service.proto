@@ -12,7 +12,7 @@ message Event {
     int64 user_id = 6; 
 }
 
-message CreateEventRequest {
+message BodyEventRequest {
     Event event = 1; 
     int32 n_day_alarm = 2; 
 }
@@ -20,12 +20,6 @@ message CreateEventRequest {
 message CreateEventResponse {
     int64 id = 1; 
     bool success = 2; 
-}
-
-message UpdateEventRequest {
-    Event event = 1; 
-    int32 n_day_alarm = 2; 
-
 }
 
 message UpdateEventResponse {
@@ -46,20 +40,25 @@ message GetEventsRequest {
     int32 size = 3; 
 }
 
+message EventModel {
+    Event event = 1; 
+    string time_alarm = 2; 
+}
+
 message GetEventsResponse {
-    repeated Event events = 1; 
+    repeated EventModel events = 1; 
     bool success = 2;
 }
 
 service EventService {
-    rpc CreateEvent(CreateEventRequest) returns (CreateEventResponse) {
+    rpc CreateEvent(BodyEventRequest) returns (CreateEventResponse) {
         option (google.api.http) = {
             post: "/events"
             body: "event"
         };
     }
     
-    rpc UpdateEvent(UpdateEventRequest) returns (UpdateEventResponse) {
+    rpc UpdateEvent(BodyEventRequest) returns (UpdateEventResponse) {
         option (google.api.http) = {
             patch: "/events"
             body: "event"

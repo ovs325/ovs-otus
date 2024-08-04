@@ -76,7 +76,7 @@ func (b *BusinessLogic) GetWeekLogic(ctx context.Context,
 }
 
 // СписокСобытийНaМесяц (дата начала месяца).
-func (b *BusinessLogic) GetMonthLiogic(ctx context.Context,
+func (b *BusinessLogic) GetMonthLogic(ctx context.Context,
 	date time.Time,
 	datePaginate cm.Paginate,
 ) (tp.QueryPage[tp.EventModel], error) {
