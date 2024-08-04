@@ -16,7 +16,7 @@ type PostgresCnf struct {
 	Password string `mapstructure:"password"`
 }
 
-type HttpServerConf struct {
+type HTTPServerConf struct {
 	Host string `mapstructure:"host"`
 	Port string `mapstructure:"port"`
 }

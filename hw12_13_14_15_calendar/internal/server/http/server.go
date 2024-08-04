@@ -12,23 +12,23 @@ import (
 	lg "github.com/ovs325/ovs-otus/hw12_13_14_15_calendar/internal/logger"
 )
 
-type HttpServer struct {
+type HTTPServer struct {
 	log lg.Logger
 	srv *http.Server
 }
 
-func NewHttpServer(logger lg.Logger) *HttpServer {
-	return &HttpServer{log: logger}
+func NewHTTPServer(logger lg.Logger) *HTTPServer {
+	return &HTTPServer{log: logger}
 }
 
-func (s *HttpServer) Start(_ context.Context, cfg *cf.Config, routes rt.Router) error {
+func (s *HTTPServer) Start(_ context.Context, cfg *cf.Config, routes rt.Router) error {
 	s.log.Info("the Http-server starts")
 	r := mux.NewRouter()
 	for path, params := range routes.Router {
 		r.Handle(path, params.Handler).Methods(params.Method)
 	}
 
-	dsn := fmt.Sprintf("%s:%s", cfg.HttpServer.Host, cfg.HttpServer.Port)
+	dsn := fmt.Sprintf("%s:%s", cfg.HTTPServer.Host, cfg.HTTPServer.Port)
 	s.srv = &http.Server{ //nolint:gosec
 		Addr:    dsn,
 		Handler: r,
@@ -41,7 +41,7 @@ func (s *HttpServer) Start(_ context.Context, cfg *cf.Config, routes rt.Router) 
 	return nil
 }
 
-func (s *HttpServer) Stop(ctx context.Context) error {
+func (s *HTTPServer) Stop(ctx context.Context) error {
 	fmt.Println("Http-Server forced to shutdown")
 	if err := s.srv.Shutdown(ctx); err != nil {
 		log.Fatal("Shutdown error: ", err)

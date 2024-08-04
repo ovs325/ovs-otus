@@ -1,37 +1,37 @@
 package grpc
 
 import (
+	"errors"
 	"fmt"
 	"net"
-
-	"google.golang.org/grpc"
 
 	hd "github.com/ovs325/ovs-otus/hw12_13_14_15_calendar/api/handlers"
 	pb "github.com/ovs325/ovs-otus/hw12_13_14_15_calendar/grpc/event_service"
 	cf "github.com/ovs325/ovs-otus/hw12_13_14_15_calendar/internal/config"
 	lg "github.com/ovs325/ovs-otus/hw12_13_14_15_calendar/internal/logger"
+	"google.golang.org/grpc"
 )
 
-type GrpcServer struct {
+type ProtoServer struct {
 	logic hd.AbstractLogic
 	log   lg.Logger
 	srv   *grpc.Server
 }
 
-func NewGrpcServer(l hd.AbstractLogic, logger lg.Logger) *GrpcServer {
-	return &GrpcServer{logic: l, log: logger}
+func NewGrpcServer(l hd.AbstractLogic, logger lg.Logger) *ProtoServer {
+	return &ProtoServer{logic: l, log: logger}
 }
 
-type eventServiceServer struct {
+type EventServiceServer struct {
 	pb.UnimplementedEventServiceServer
 }
 
-// Новый Event-сервис
-func NewEventServiceServer() *eventServiceServer {
-	return &eventServiceServer{}
+// Новый Event-сервис.
+func NewEventServiceServer() *EventServiceServer {
+	return &EventServiceServer{}
 }
 
-func (s *GrpcServer) Start(cnf *cf.Config) error {
+func (s *ProtoServer) Start(cnf *cf.Config) error {
 	s.log.Info("the GRPC-server starts")
 
 	dsn := fmt.Sprintf("%s:%s", cnf.GrpcServer.Host, cnf.GrpcServer.Port)
@@ -49,13 +49,13 @@ func (s *GrpcServer) Start(cnf *cf.Config) error {
 	// Конец Иннициализации gRPS-server-а
 
 	s.log.Info("GRPC-Server started successfully!", "address", dsn)
-	if err := s.srv.Serve(lis); err != nil && err != grpc.ErrServerStopped {
+	if err := s.srv.Serve(lis); err != nil && !errors.Is(err, grpc.ErrServerStopped) {
 		return err
 	}
 	return nil
 }
 
-func (s *GrpcServer) Stop() error {
+func (s *ProtoServer) Stop() error {
 	fmt.Println("GRPC-Server forced to shutdown")
 	s.srv.Stop()
 	fmt.Println("GRPC-Server Shutdown is successful!!")

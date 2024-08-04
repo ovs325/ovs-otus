@@ -7,7 +7,7 @@ import (
 )
 
 type Config struct {
-	HttpServer  HttpServerConf  `mapstructure:"http_server"`
+	HTTPServer  HTTPServerConf  `mapstructure:"http_server"`
 	GrpcServer  GrpcServerConf  `mapstructure:"grpc_server"`
 	SwaggServer SwaggServerConf `mapstructure:"swagger_server"`
 	Logger      LoggerConf      `mapstructure:"logger"`

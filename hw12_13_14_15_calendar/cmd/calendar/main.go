@@ -59,7 +59,7 @@ func main() {
 	routes := rt.NewRouter(logg)
 	routes.AddRoutes(logic)
 
-	httpServer := hp.NewHttpServer(logg)
+	httpServer := hp.NewHTTPServer(logg)
 	grpcServer := gr.NewGrpcServer(logic, logg)
 
 	// init graceful shutdown.
@@ -76,11 +76,11 @@ func main() {
 		if errGr != nil {
 			logg.Error("failed to stop grpc-server", "err", err.Error())
 		}
-		errHttp := httpServer.Stop(ctxtime)
-		if errHttp != nil {
+		errHTTP := httpServer.Stop(ctxtime)
+		if errHTTP != nil {
 			logg.Error("failed to stop http-server", "err", err.Error())
 		}
-		if errGr != nil || errHttp != nil {
+		if errGr != nil || errHTTP != nil {
 			os.Exit(1)
 		}
 		fmt.Println("Microservice has closed!!")
