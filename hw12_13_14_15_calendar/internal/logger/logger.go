@@ -6,6 +6,7 @@ import (
 	"strings"
 )
 
+//go:generate mockery --name Logger
 type Logger interface {
 	Debug(msg string, args ...any)
 	Info(msg string, args ...any)

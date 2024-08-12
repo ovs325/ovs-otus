@@ -4,7 +4,7 @@ import (
 	"context"
 	"sync"
 
-	bl "github.com/ovs325/ovs-otus/hw12_13_14_15_calendar/internal/business_logic"
+	hd "github.com/ovs325/ovs-otus/hw12_13_14_15_calendar/api/handlers"
 	tp "github.com/ovs325/ovs-otus/hw12_13_14_15_calendar/internal/types"
 )
 
@@ -14,7 +14,7 @@ type MemRepo struct {
 	LastID int64
 }
 
-func NewMemRepo() (bl.AbstractStorage, error) {
+func NewMemRepo() (hd.AbstractStorage, error) {
 	repo := &MemRepo{LastID: int64(0)}
 	repo.Connect(context.Background())
 	return repo, nil

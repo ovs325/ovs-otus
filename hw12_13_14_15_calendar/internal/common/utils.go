@@ -54,7 +54,7 @@ func (r *Response) SetStatus(status int) *Response {
 	return r
 }
 
-func Decode(body io.ReadCloser, v any) error {
+func Decode[T any](body io.ReadCloser, v *T) error {
 	buf, err := io.ReadAll(body)
 	if err != nil {
 		return fmt.Errorf("Decode: не удалось получить тело запроса: %w", err)
@@ -65,29 +65,49 @@ func Decode(body io.ReadCloser, v any) error {
 	return nil
 }
 
-func ParamInt(r *http.Request, param string) (int, error) {
+func ParamGeneric[T any](
+	r *http.Request,
+	param string,
+	converter func(string) (T, error),
+	errCnv error,
+) (T, error) {
+	var zero T
 	p := r.URL.Query().Get(param)
 	if p == "" {
-		return 0, er.ErrLostID
+		return zero, er.ErrLostID
 	}
-	pInt, err := strconv.Atoi(p)
+	res, err := converter(p)
 	if err != nil {
-		return 0, er.ErrBadID
+		return zero, errCnv
 	}
-	return pInt, nil
+	return res, nil
 }
 
-func ParamTime(r *http.Request, param string) (date time.Time, err error) {
-	dateStr := r.URL.Query().Get(param)
-	if dateStr == "" {
-		date = time.Now()
-	} else {
-		date, err = time.Parse(time.RFC3339, dateStr)
-		if err != nil {
-			return date, er.ErrBadFormatTime
-		}
+func IntConverter(s string) (int, error) {
+	return strconv.Atoi(s)
+}
+
+func StrConverter(s string) (string, error) {
+	return s, nil
+}
+
+func TimeConverter(s string) (time.Time, error) {
+	if s == "" {
+		return time.Now(), nil
 	}
-	return date, nil
+	return time.Parse(time.RFC3339, s)
+}
+
+func ParamInt(r *http.Request, param string) (int, error) {
+	return ParamGeneric(r, param, IntConverter, er.ErrBadID)
+}
+
+func ParamStr(r *http.Request, param string) (string, error) {
+	return ParamGeneric(r, param, StrConverter, er.ErrBadParam)
+}
+
+func ParamTime(r *http.Request, param string) (time.Time, error) {
+	return ParamGeneric(r, param, TimeConverter, er.ErrBadFormatTime)
 }
 
 type Paginate struct {
@@ -96,11 +116,11 @@ type Paginate struct {
 
 func ParamPaginate(r *http.Request) (p Paginate) {
 	var err error
-	if p.Page, err = ParamInt(r, "page"); err != nil || p.Page == 0 {
+	if p.Page, err = ParamInt(r, "page"); err != nil || p.Page <= 0 {
 		p.Page = 1
 	}
-	if p.Size, err = ParamInt(r, "size"); err != nil || p.Size == 0 {
+	if p.Size, err = ParamInt(r, "size"); err != nil || p.Size <= 0 {
 		p.Size = 10
 	}
-	return
+	return p
 }

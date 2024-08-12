@@ -10,8 +10,8 @@ import (
 	"syscall"
 	"time"
 
+	hd "github.com/ovs325/ovs-otus/hw12_13_14_15_calendar/api/handlers"
 	rt "github.com/ovs325/ovs-otus/hw12_13_14_15_calendar/api/routing"
-	bl "github.com/ovs325/ovs-otus/hw12_13_14_15_calendar/internal/business_logic"
 	cf "github.com/ovs325/ovs-otus/hw12_13_14_15_calendar/internal/config"
 	lg "github.com/ovs325/ovs-otus/hw12_13_14_15_calendar/internal/logger"
 	gr "github.com/ovs325/ovs-otus/hw12_13_14_15_calendar/internal/server/grpc"
@@ -43,7 +43,7 @@ func main() {
 
 	ctx, cancel := context.WithCancel(context.Background())
 
-	var storage bl.AbstractStorage
+	var storage hd.AbstractStorage
 	var errStorage error
 	if config.DB.IsPostgres {
 		storage, errStorage = sq.NewPgRepo(ctx, &config, logg)
@@ -55,12 +55,11 @@ func main() {
 		return
 	}
 
-	logic := bl.NewBusinessLogic(storage)
 	routes := rt.NewRouter(logg)
-	routes.AddRoutes(logic)
+	routes.AddRoutes(storage)
 
 	httpServer := hp.NewHTTPServer(logg)
-	grpcServer := gr.NewGrpcServer(logic, logg)
+	grpcServer := gr.NewGrpcServer(storage, logg)
 
 	// init graceful shutdown.
 	defer func() {

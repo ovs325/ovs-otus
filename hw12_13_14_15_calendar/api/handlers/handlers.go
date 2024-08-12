@@ -10,40 +10,30 @@ import (
 	cm "github.com/ovs325/ovs-otus/hw12_13_14_15_calendar/internal/common"
 	lg "github.com/ovs325/ovs-otus/hw12_13_14_15_calendar/internal/logger"
 	tp "github.com/ovs325/ovs-otus/hw12_13_14_15_calendar/internal/types"
+	"github.com/ovs325/ovs-otus/hw12_13_14_15_calendar/pkg"
 )
 
-type BusinessLogic interface {
-	GetRes() error
-}
-
 type Handlers struct {
-	log   lg.Logger
-	logic AbstractLogic
+	log  lg.Logger
+	stor AbstractStorage
 }
 
-func NewHandlersGroup(logic AbstractLogic, log lg.Logger) Handlers {
-	return Handlers{logic: logic, log: log}
+func NewHandlersGroup(repo AbstractStorage, log lg.Logger) Handlers {
+	return Handlers{stor: repo, log: log}
 }
 
-type AbstractLogic interface {
-	CreateEventLogic(ctx context.Context, checkItem *tp.EventRequest) (int, error)
-	UpdateEventLogic(ctx context.Context, checkItem *tp.EventRequest) error
-	DelEventLogic(ctx context.Context, id int64) error
-	GetDayLogic(
+//go:generate mockery --name AbstractStorage
+type AbstractStorage interface {
+	CreateEvent(ctx context.Context, event *tp.EventModel) (id int64, err error)
+	UpdateEvent(ctx context.Context, event *tp.EventModel) error
+	DelEvent(ctx context.Context, id int64) error
+	GetEventsForTimeInterval(
 		ctx context.Context,
-		date time.Time,
+		start, end time.Time,
 		datePaginate cm.Paginate,
 	) (tp.QueryPage[tp.EventModel], error)
-	GetWeekLogic(
-		ctx context.Context,
-		date time.Time,
-		datePaginate cm.Paginate,
-	) (tp.QueryPage[tp.EventModel], error)
-	GetMonthLogic(
-		ctx context.Context,
-		date time.Time,
-		datePaginate cm.Paginate,
-	) (tp.QueryPage[tp.EventModel], error)
+	Connect(ctx context.Context) error
+	Close() error
 }
 
 // POST
@@ -59,12 +49,18 @@ func (h *Handlers) CreateEventHandler() http.HandlerFunc {
 			ClientError(w, err.Error())
 			return
 		}
-		id, err := h.logic.CreateEventLogic(r.Context(), checkItem)
+		checkItem.ID = 0
+
+		event := tp.EventModel{}
+		event.GetModel(*checkItem)
+
+		id, err := h.stor.CreateEvent(r.Context(), &event)
 		if err != nil {
 			h.log.Error("ошибка http-сервера", "error", err.Error())
 			ServerError(w, err.Error())
+			return
 		}
-		cm.NewResponse(w).Text(strconv.Itoa(id))
+		cm.NewResponse(w).Text(strconv.FormatInt(id, 10))
 	}
 }
 
@@ -81,9 +77,18 @@ func (h *Handlers) UpdateEventHandler() http.HandlerFunc {
 			ClientError(w, err.Error())
 			return
 		}
-		if err = h.logic.UpdateEventLogic(r.Context(), checkItem); err != nil {
+		if checkItem.ID == 0 {
+			h.log.Error("ошибка клиента: id не должен быть <= 0")
+			ClientError(w, "id не должен быть <= 0")
+			return
+		}
+		event := tp.EventModel{}
+		event.GetModel(*checkItem)
+
+		if err = h.stor.UpdateEvent(r.Context(), &event); err != nil {
 			h.log.Error("ошибка http-сервера", "error", err.Error())
 			ServerError(w, err.Error())
+			return
 		}
 	}
 }
@@ -100,9 +105,10 @@ func (h *Handlers) DelEventHandler() http.HandlerFunc {
 			ClientError(w, fmt.Sprintf("неправильный формат параметра id: %s", err.Error()))
 			return
 		}
-		if err = h.logic.DelEventLogic(r.Context(), int64(id)); err != nil {
+		if err = h.stor.DelEvent(r.Context(), int64(id)); err != nil {
 			h.log.Error("ошибка http-сервера", "error", err.Error())
 			ServerError(w, err.Error())
+			return
 		}
 	}
 }
@@ -110,12 +116,12 @@ func (h *Handlers) DelEventHandler() http.HandlerFunc {
 // GET
 // Query-параметр:
 //
-//	date - time.Time.
-//	page - int - страница,
-//	size - int - объектов на страницу.
+//	date 		- time.Time
+//	page 		- int 		- страница,
+//	size 	 	- int 		- объектов на страницу.
 
-// Получить список событий за день.
-func (h *Handlers) GetDayHandler() http.HandlerFunc {
+// Получить список событий день.неделю.месяц.
+func (h *Handlers) GetIntervalHandler(interval string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		date, err := cm.ParamTime(r, "date")
 		if err != nil {
@@ -123,64 +129,21 @@ func (h *Handlers) GetDayHandler() http.HandlerFunc {
 			ClientError(w, fmt.Sprintf("не удалось получить дату: %s", err.Error()))
 			return
 		}
-		datePaginate := cm.ParamPaginate(r)
-		response, err := h.logic.GetDayLogic(r.Context(), date, datePaginate)
+		var first, last time.Time
+		switch interval {
+		case "day":
+			first, last = pkg.GetDayInterval(date)
+		case "week":
+			first, last = pkg.GetWeekInterval(date)
+		case "month":
+			first, last = pkg.GetMonthInterval(date)
+		}
+		res, err := h.stor.GetEventsForTimeInterval(r.Context(), first, last, cm.ParamPaginate(r))
 		if err != nil {
 			h.log.Error("ошибка http-сервера", "error", err.Error())
 			ServerError(w, err.Error())
-		}
-		cm.NewResponse(w).JSONResp(response)
-	}
-}
-
-// GET
-// Query-параметр:
-//
-//	date - time.Time.
-//	page - int - страница,
-//	size - int - объектов на страницу.
-
-// Получить список событий за неделю.
-func (h *Handlers) GetWeekHandler() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		date, err := cm.ParamTime(r, "date")
-		if err != nil {
-			h.log.Error("ошибка клиента", "error", err.Error())
-			ClientError(w, fmt.Sprintf("не удалось получить дату: %s", err.Error()))
 			return
 		}
-		datePaginate := cm.ParamPaginate(r)
-		response, err := h.logic.GetWeekLogic(r.Context(), date, datePaginate)
-		if err != nil {
-			h.log.Error("ошибка http-сервера", "error", err.Error())
-			ServerError(w, err.Error())
-		}
-		cm.NewResponse(w).JSONResp(response)
-	}
-}
-
-// GET
-// Query-параметр:
-//
-//	date - time.Time.
-//	page - int - страница,
-//	size - int - объектов на страницу.
-
-// Получить список событий за месяц.
-func (h *Handlers) GetMonthHandler() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		date, err := cm.ParamTime(r, "date")
-		if err != nil {
-			h.log.Error("ошибка клиента", "error", err.Error())
-			ClientError(w, fmt.Sprintf("не удалось получить дату: %s", err.Error()))
-			return
-		}
-		datePaginate := cm.ParamPaginate(r)
-		response, err := h.logic.GetMonthLogic(r.Context(), date, datePaginate)
-		if err != nil {
-			h.log.Error("ошибка http-сервера", "error", err.Error())
-			ServerError(w, err.Error())
-		}
-		cm.NewResponse(w).JSONResp(response)
+		cm.NewResponse(w).JSONResp(res)
 	}
 }

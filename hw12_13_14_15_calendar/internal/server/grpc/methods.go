@@ -8,6 +8,7 @@ import (
 	cm "github.com/ovs325/ovs-otus/hw12_13_14_15_calendar/internal/common"
 	er "github.com/ovs325/ovs-otus/hw12_13_14_15_calendar/internal/errors"
 	tp "github.com/ovs325/ovs-otus/hw12_13_14_15_calendar/internal/types"
+	"github.com/ovs325/ovs-otus/hw12_13_14_15_calendar/pkg"
 )
 
 func (s *ProtoServer) CreateEvent(ctx context.Context, req *pb.BodyEventRequest) (*pb.CreateEventResponse, error) {
@@ -17,12 +18,17 @@ func (s *ProtoServer) CreateEvent(ctx context.Context, req *pb.BodyEventRequest)
 		s.log.Error("ошибка grpc-клиента", "error", err.Error())
 		return &res, err
 	}
-	id, err := s.logic.CreateEventLogic(ctx, &checkItem)
+	checkItem.ID = 0
+
+	event := tp.EventModel{}
+	event.GetModel(checkItem)
+
+	id, err := s.stor.CreateEvent(ctx, &event)
 	if err != nil {
 		s.log.Error("ошибка grpc-сервера", "error", err.Error())
 		return &res, err
 	}
-	res.Id = int64(id)
+	res.Id = id
 	res.Success = true
 	return &res, err
 }
@@ -34,7 +40,13 @@ func (s *ProtoServer) UpdateEvent(ctx context.Context, req *pb.BodyEventRequest)
 		s.log.Error("ошибка grpc-клиента", "error", err.Error())
 		return &res, err
 	}
-	if err = s.logic.UpdateEventLogic(ctx, &checkItem); err != nil {
+	if checkItem.ID == 0 {
+		s.log.Error("ошибка grpc-клиента: id не должен быть <= 0")
+		return &res, err
+	}
+	event := tp.EventModel{}
+	event.GetModel(checkItem)
+	if err = s.stor.UpdateEvent(ctx, &event); err != nil {
 		s.log.Error("ошибка grpc-сервера", "error", err.Error())
 		return &res, err
 	}
@@ -44,7 +56,7 @@ func (s *ProtoServer) UpdateEvent(ctx context.Context, req *pb.BodyEventRequest)
 
 func (s *ProtoServer) DeleteEvent(ctx context.Context, req *pb.DeleteEventRequest) (*pb.DeleteEventResponse, error) {
 	res := pb.DeleteEventResponse{Success: false}
-	if err := s.logic.DelEventLogic(ctx, req.Id); err != nil {
+	if err := s.stor.DelEvent(ctx, req.Id); err != nil {
 		s.log.Error("ошибка grpc-сервера", "error", err.Error())
 		return &res, err
 	}
@@ -53,47 +65,38 @@ func (s *ProtoServer) DeleteEvent(ctx context.Context, req *pb.DeleteEventReques
 }
 
 func (s *ProtoServer) GetEventsDay(ctx context.Context, req *pb.GetEventsRequest) (*pb.GetEventsResponse, error) {
-	res := pb.GetEventsResponse{Success: false}
-	date, err := time.Parse(time.RFC3339, req.Date)
-	if err != nil {
-		s.log.Error("ошибка grpc-клиента", "error", err.Error())
-		return &res, er.ErrBadFormatTime
-	}
-	result, err := s.logic.GetDayLogic(ctx, date, cm.Paginate{})
-	if err != nil {
-		s.log.Error("ошибка grpc-сервера", "error", err.Error())
-		return &res, err
-	}
-	res.Events = s.eventsToResponce(result)
-	res.Success = true
-	return &res, nil
-}
-
-func (s *ProtoServer) GetEventsMonth(ctx context.Context, req *pb.GetEventsRequest) (*pb.GetEventsResponse, error) {
-	res := pb.GetEventsResponse{Success: false}
-	date, err := time.Parse(time.RFC3339, req.Date)
-	if err != nil {
-		s.log.Error("ошибка grpc-клиента", "error", err.Error())
-		return &res, er.ErrBadFormatTime
-	}
-	result, err := s.logic.GetWeekLogic(ctx, date, cm.Paginate{})
-	if err != nil {
-		s.log.Error("ошибка grpc-сервера", "error", err.Error())
-		return &res, err
-	}
-	res.Events = s.eventsToResponce(result)
-	res.Success = true
-	return &res, nil
+	return s.getEventsInterval(ctx, "day", req)
 }
 
 func (s *ProtoServer) GetEventsWeek(ctx context.Context, req *pb.GetEventsRequest) (*pb.GetEventsResponse, error) {
+	return s.getEventsInterval(ctx, "week", req)
+}
+
+func (s *ProtoServer) GetEventsMonth(ctx context.Context, req *pb.GetEventsRequest) (*pb.GetEventsResponse, error) {
+	return s.getEventsInterval(ctx, "month", req)
+}
+
+func (s *ProtoServer) getEventsInterval(
+	ctx context.Context,
+	interval string,
+	req *pb.GetEventsRequest,
+) (*pb.GetEventsResponse, error) {
 	res := pb.GetEventsResponse{Success: false}
 	date, err := time.Parse(time.RFC3339, req.Date)
 	if err != nil {
 		s.log.Error("ошибка grpc-клиента", "error", err.Error())
 		return &res, er.ErrBadFormatTime
 	}
-	result, err := s.logic.GetMonthLogic(ctx, date, cm.Paginate{})
+	var first, last time.Time
+	switch interval {
+	case "day":
+		first, last = pkg.GetDayInterval(date)
+	case "week":
+		first, last = pkg.GetWeekInterval(date)
+	case "month":
+		first, last = pkg.GetMonthInterval(date)
+	}
+	result, err := s.stor.GetEventsForTimeInterval(ctx, first, last, cm.Paginate{})
 	if err != nil {
 		s.log.Error("ошибка grpc-сервера", "error", err.Error())
 		return &res, err

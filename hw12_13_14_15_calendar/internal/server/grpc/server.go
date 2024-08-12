@@ -13,13 +13,13 @@ import (
 )
 
 type ProtoServer struct {
-	logic hd.AbstractLogic
-	log   lg.Logger
-	srv   *grpc.Server
+	stor hd.AbstractStorage
+	log  lg.Logger
+	srv  *grpc.Server
 }
 
-func NewGrpcServer(l hd.AbstractLogic, logger lg.Logger) *ProtoServer {
-	return &ProtoServer{logic: l, log: logger}
+func NewGrpcServer(l hd.AbstractStorage, logger lg.Logger) *ProtoServer {
+	return &ProtoServer{stor: l, log: logger}
 }
 
 type EventServiceServer struct {
