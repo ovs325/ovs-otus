@@ -10,10 +10,11 @@ import (
 	"syscall"
 	"time"
 
+	hd "github.com/ovs325/ovs-otus/hw12_13_14_15_calendar/api/handlers"
 	rt "github.com/ovs325/ovs-otus/hw12_13_14_15_calendar/api/routing"
-	ap "github.com/ovs325/ovs-otus/hw12_13_14_15_calendar/internal/app"
 	cf "github.com/ovs325/ovs-otus/hw12_13_14_15_calendar/internal/config"
 	lg "github.com/ovs325/ovs-otus/hw12_13_14_15_calendar/internal/logger"
+	gr "github.com/ovs325/ovs-otus/hw12_13_14_15_calendar/internal/server/grpc"
 	hp "github.com/ovs325/ovs-otus/hw12_13_14_15_calendar/internal/server/http"
 	mm "github.com/ovs325/ovs-otus/hw12_13_14_15_calendar/internal/storage/memory"
 	sq "github.com/ovs325/ovs-otus/hw12_13_14_15_calendar/internal/storage/sql"
@@ -42,7 +43,7 @@ func main() {
 
 	ctx, cancel := context.WithCancel(context.Background())
 
-	var storage ap.Storage
+	var storage hd.AbstractStorage
 	var errStorage error
 	if config.DB.IsPostgres {
 		storage, errStorage = sq.NewPgRepo(ctx, &config, logg)
@@ -54,14 +55,11 @@ func main() {
 		return
 	}
 
-	calendar := ap.New(logg, storage)
-
-	server := hp.NewServer(logg, calendar)
-
-	logg.Info("calendar is running...")
-
 	routes := rt.NewRouter(logg)
-	routes.AddRoutes()
+	routes.AddRoutes(storage)
+
+	httpServer := hp.NewHTTPServer(logg)
+	grpcServer := gr.NewGrpcServer(storage, logg)
 
 	// init graceful shutdown.
 	defer func() {
@@ -73,8 +71,15 @@ func main() {
 		}
 		ctxtime, canceltime := context.WithTimeout(context.Background(), time.Second*3)
 		defer canceltime()
-		if err := server.Stop(ctxtime); err != nil {
-			logg.Error("failed to stop http server", "err", err.Error())
+		errGr := grpcServer.Stop()
+		if errGr != nil {
+			logg.Error("failed to stop grpc-server", "err", err.Error())
+		}
+		errHTTP := httpServer.Stop(ctxtime)
+		if errHTTP != nil {
+			logg.Error("failed to stop http-server", "err", err.Error())
+		}
+		if errGr != nil || errHTTP != nil {
 			os.Exit(1)
 		}
 		fmt.Println("Microservice has closed!!")
@@ -93,7 +98,10 @@ func main() {
 	)
 
 	go func() {
-		errCh <- server.Start(ctx, &config, *routes)
+		errCh <- httpServer.Start(ctx, &config, *routes)
+	}()
+	go func() {
+		errCh <- grpcServer.Start(&config)
 	}()
 
 	select {

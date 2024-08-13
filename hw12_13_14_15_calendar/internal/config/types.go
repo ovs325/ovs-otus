@@ -9,12 +9,6 @@ type DBConf struct {
 	IsPostgres bool   `mapstructure:"isPostgres"`
 }
 
-type ReindexerCnf struct {
-	Namespace string `mapstructure:"namespace"`
-	Host      string `mapstructure:"host"`
-	Port      string `mapstructure:"port"`
-}
-
 type PostgresCnf struct {
 	Host     string `mapstructure:"host"`
 	Port     string `mapstructure:"port"`
@@ -22,7 +16,17 @@ type PostgresCnf struct {
 	Password string `mapstructure:"password"`
 }
 
-type ServerConf struct {
+type HTTPServerConf struct {
+	Host string `mapstructure:"host"`
+	Port string `mapstructure:"port"`
+}
+
+type GrpcServerConf struct {
+	Host string `mapstructure:"host"`
+	Port string `mapstructure:"port"`
+}
+
+type SwaggServerConf struct {
 	Host string `mapstructure:"host"`
 	Port string `mapstructure:"port"`
 }

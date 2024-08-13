@@ -16,6 +16,14 @@ reindexer:
   host: localhost
   port: 7778
 
-server:
+http_server:
   host: localhost
   port: 7779
+
+grpc_server:
+  host: localhost
+  port: 7780
+
+swagger_server:
+  host: localhost
+  port: 7781
