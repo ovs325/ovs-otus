@@ -4,6 +4,8 @@ DOCKER_IMG="calendar:develop"
 GIT_HASH := $(shell git log --format="%h" -n 1)
 LDFLAGS := -X main.release="develop" -X main.buildDate=$(shell date -u +%Y-%m-%dT%H:%M:%S) -X main.gitHash=$(GIT_HASH)
 
+.PHONY: all clean
+
 build:
 	go build -v -o $(BIN) -ldflags "$(LDFLAGS)" ./cmd/calendar
 
@@ -59,3 +61,20 @@ compile:
 
 prot:
 	protoc --proto_path=. --go-grpc_out=./grpc --go_out=./grpc --go-grpc_opt=paths=import --go_opt=paths=import ./proto/event_service.proto
+
+rabbit: 
+	docker run -d --name rabbitmq -p 5672:5672 -p 15672:15672 rabbitmq:3-management
+
+all: calendar calendar_scheduler calendar_sender
+
+calendar: cmd/calendar/main.go
+	go build -o calendar cmd/calendar/main.go
+
+calendar_scheduler: cmd/calendar_scheduler/main.go
+	go build -o calendar_scheduler cmd/calendar_scheduler/main.go
+
+calendar_sender: cmd/calendar_sender/main.go
+	go build -o calendar_sender cmd/calendar_sender/main.go
+
+clean:
+	rm -f calendar calendar_scheduler calendar_sender

@@ -23,7 +23,7 @@ import (
 var configFile string
 
 func init() {
-	flag.StringVar(&configFile, "config", "../../", "Path to configuration file")
+	flag.StringVar(&configFile, "config", "../../", "Path to calendar configuration file")
 }
 
 func main() {
@@ -34,7 +34,7 @@ func main() {
 		return
 	}
 
-	config, err := cf.NewConfig(configFile)
+	config, err := cf.NewCalendarConfig(configFile)
 	if err != nil {
 		fmt.Printf("failed to load config: %s", err.Error())
 	}

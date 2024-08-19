@@ -21,7 +21,7 @@ func NewHTTPServer(logger lg.Logger) *HTTPServer {
 	return &HTTPServer{log: logger}
 }
 
-func (s *HTTPServer) Start(_ context.Context, cfg *cf.Config, routes rt.Router) error {
+func (s *HTTPServer) Start(_ context.Context, cfg *cf.CalendarConfig, routes rt.Router) error {
 	s.log.Info("the Http-server starts")
 	r := mux.NewRouter()
 	for path, params := range routes.Router {

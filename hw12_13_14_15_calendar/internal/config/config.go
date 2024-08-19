@@ -3,21 +3,24 @@ package config
 import (
 	"fmt"
 
+	rb "github.com/ovs325/ovs-otus/hw12_13_14_15_calendar/pkg/rabbitmq"
+
 	"github.com/spf13/viper"
 )
 
-type Config struct {
+type CalendarConfig struct {
 	HTTPServer  HTTPServerConf  `mapstructure:"http_server"`
 	GrpcServer  GrpcServerConf  `mapstructure:"grpc_server"`
 	SwaggServer SwaggServerConf `mapstructure:"swagger_server"`
 	Logger      LoggerConf      `mapstructure:"logger"`
 	DB          DBConf          `mapstructure:"database"`
 	PgCnf       PostgresCnf     `mapstructure:"postgres"`
+	Rabbit      rb.RabbitConf   `mapstructure:"rabbitmq"`
 }
 
-func NewConfig(path string) (Config, error) {
+func NewCalendarConfig(path string) (CalendarConfig, error) {
 	viper.AddConfigPath(path)
-	viper.SetConfigName("config")
+	viper.SetConfigName("config_calendar")
 	viper.SetConfigType("yaml")
 	viper.AutomaticEnv()
 
@@ -40,15 +43,21 @@ func NewConfig(path string) (Config, error) {
 	viper.SetDefault("swagger_server.host", "localhost")
 	viper.SetDefault("swagger_server.port", 7781)
 
+	viper.SetDefault("rabbitmq.host", "localhost")
+	viper.SetDefault("rabbitmq.port", 5672)
+	viper.SetDefault("rabbitmq.user", "guest")
+	viper.SetDefault("rabbitmq.password", "guest")
+	viper.SetDefault("rabbitmq.queue", "notifications")
+
 	err := viper.ReadInConfig()
 	if err != nil {
-		return Config{}, fmt.Errorf("failed to read config: %w", err)
+		return CalendarConfig{}, fmt.Errorf("failed to read calendar_config: %w", err)
 	}
 
-	var config Config
+	var config CalendarConfig
 	err = viper.Unmarshal(&config)
 	if err != nil {
-		return Config{}, fmt.Errorf("failed to unmarshal config: %w", err)
+		return CalendarConfig{}, fmt.Errorf("failed to unmarshal calendar_config: %w", err)
 	}
 
 	return config, nil

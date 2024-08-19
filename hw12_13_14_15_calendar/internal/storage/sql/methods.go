@@ -3,6 +3,7 @@ package sql
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/jackc/pgx/v4"
@@ -77,19 +78,34 @@ func (p *PgRepo) DelEvent(ctx context.Context, id int64) error {
 	return nil
 }
 
-// Список Событий в промежутке дат.
 func (p *PgRepo) GetEventsForTimeInterval(
+	ctx context.Context, start, end time.Time, datePaginate cm.Paginate,
+) (tp.QueryPage[tp.EventModel], error) {
+	return p.getItemsForTimeInterval(ctx, "date", start, end, datePaginate)
+}
+
+func (p *PgRepo) GetEventsForTimeAlarmInterval(
+	ctx context.Context, start, end time.Time, datePaginate cm.Paginate,
+) (tp.QueryPage[tp.EventModel], error) {
+	return p.getItemsForTimeInterval(ctx, "time_alarm", start, end, datePaginate)
+}
+
+// Список Событий в промежутке дат.
+func (p *PgRepo) getItemsForTimeInterval(
 	ctx context.Context,
+	fieldNname string,
 	start, end time.Time,
 	datePaginate cm.Paginate,
 ) (tp.QueryPage[tp.EventModel], error) {
 	var err error
 	var rows pgx.Rows
+	q := fmt.Sprintf(
+		`SELECT * FROM "events" WHERE "%s" BETWEEN $1 AND $2 ORDER BY "id" ASC`, fieldNname,
+	)
 	if datePaginate.Page <= 0 || datePaginate.Size <= 0 {
-		q := `SELECT * FROM "events" WHERE "date" BETWEEN $1 AND $2 ORDER BY "id" ASC`
 		rows, err = p.DB.Query(ctx, q, start, end)
 	} else {
-		q := `SELECT * FROM "events" WHERE "date" BETWEEN $1 AND $2 ORDER BY "id" ASC LIMIT $3 OFFSET $4`
+		q = strings.Join([]string{q, "LIMIT $3 OFFSET $4"}, " ")
 		offset := (datePaginate.Page - 1) * datePaginate.Size
 		rows, err = p.DB.Query(ctx, q, start, end, datePaginate.Size, offset)
 	}
