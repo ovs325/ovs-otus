@@ -43,13 +43,13 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 
 	defer func() {
-		logger.Info("Closing Scheduller gracefully...")
+		logger.Info("Closing Sender gracefully...")
 		cancel()
 		rabbitMQ.Close()
 		if err := recover(); err != nil {
 			log.Println("Panic:", err)
 		}
-		fmt.Println("Scheduller has closed!!")
+		fmt.Println("Sender has closed!!")
 	}()
 
 	snd, err := sender.NewSender(rabbitMQ, logger)
