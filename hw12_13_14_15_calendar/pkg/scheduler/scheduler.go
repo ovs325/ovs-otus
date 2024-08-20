@@ -30,9 +30,9 @@ type QueueManager interface {
 func NewScheduler(db Repo, qm QueueManager, intervalStr string) (*Scheduler, error) {
 	switch {
 	case db == nil:
-		return nil, fmt.Errorf("repo for scheduller is nil!")
+		return nil, fmt.Errorf("repo for scheduller is nil")
 	case qm == nil:
-		return nil, fmt.Errorf("rabbit for scheduller is nil!")
+		return nil, fmt.Errorf("rabbit for scheduller is nil")
 	}
 	duration, err := time.ParseDuration(intervalStr)
 	if err != nil {
@@ -74,7 +74,7 @@ func (s *Scheduler) checkEvents(ctx context.Context) error {
 			return fmt.Errorf("error publishing notification: %w", err)
 		}
 		if err := s.db.DelEvent(ctx, event.ID); err != nil {
-			return fmt.Errorf("error deleting events:", err)
+			return fmt.Errorf("error deleting events: %w", err.Error())
 		}
 	}
 	return nil

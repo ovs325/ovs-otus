@@ -35,14 +35,14 @@ func (s *Sender) Start(ctx context.Context) error {
 	s.log.Info("Sender is start!", "Queue", s.qManager.GetNameQueue())
 	msgs, err := s.qManager.Consume()
 	if err != nil {
-		return fmt.Errorf("Error start consumer: %w", err)
+		return fmt.Errorf("error start consumer: %w", err)
 	}
 	for {
 		select {
 		case msg := <-msgs:
 			var notif pk.Notification
 			if err := json.Unmarshal(msg.Body, &notif); err != nil {
-				s.log.Error("Error unmarshalling Notification", "err", err.Error())
+				s.log.Error("error unmarshalling notification", "err", err.Error())
 				continue
 			}
 			// Основной вывод (вместо отправки по почте)
