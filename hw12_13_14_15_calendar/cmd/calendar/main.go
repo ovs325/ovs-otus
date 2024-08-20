@@ -89,7 +89,7 @@ func main() {
 		if errGr != nil || errHTTP != nil {
 			os.Exit(1)
 		}
-		fmt.Println("Microservice has closed!!")
+		fmt.Println("Microservice has closed")
 	}()
 
 	// start server.

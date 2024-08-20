@@ -74,7 +74,7 @@ func (s *Scheduler) checkEvents(ctx context.Context) error {
 			return fmt.Errorf("error publishing notification: %w", err)
 		}
 		if err := s.db.DelEvent(ctx, event.ID); err != nil {
-			return fmt.Errorf("error deleting events: %w", err.Error())
+			return fmt.Errorf("error deleting events: %w", err)
 		}
 	}
 	return nil
