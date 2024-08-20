@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"log"
@@ -18,6 +19,12 @@ import (
 	hp "github.com/ovs325/ovs-otus/hw12_13_14_15_calendar/internal/server/http"
 	mm "github.com/ovs325/ovs-otus/hw12_13_14_15_calendar/internal/storage/memory"
 	sq "github.com/ovs325/ovs-otus/hw12_13_14_15_calendar/internal/storage/sql"
+)
+
+var (
+	release   = "UNKNOWN"
+	buildDate = "UNKNOWN"
+	gitHash   = "UNKNOWN"
 )
 
 var configFile string
@@ -108,5 +115,19 @@ func main() {
 	case err := <-errCh:
 		panic(err)
 	case <-sigs:
+	}
+}
+
+func printVersion() {
+	if err := json.NewEncoder(os.Stdout).Encode(struct {
+		Release   string
+		BuildDate string
+		GitHash   string
+	}{
+		Release:   release,
+		BuildDate: buildDate,
+		GitHash:   gitHash,
+	}); err != nil {
+		fmt.Printf("error while decode version info: %v\n", err)
 	}
 }

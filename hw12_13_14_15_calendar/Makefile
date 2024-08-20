@@ -72,11 +72,22 @@ all: calendar calendar_scheduler calendar_sender
 calendar: cmd/calendar/main.go
 	go build -o calendar cmd/calendar/main.go
 
-calendar_scheduler: cmd/calendar_scheduler/main.go
-	go build -o calendar_scheduler cmd/calendar_scheduler/main.go
+calendar_scheduler: cmd/scheduler/main.go
+	go build -o calendar_scheduler cmd/scheduler/main.go
 
-calendar_sender: cmd/calendar_sender/main.go
-	go build -o calendar_sender cmd/calendar_sender/main.go
+calendar_sender: cmd/sender/main.go
+	go build -o calendar_sender cmd/sender/main.go
 
 clean:
 	rm -f calendar calendar_scheduler calendar_sender
+
+run-calendar:
+	./calendar --config=./
+
+run-scheduler:
+	./calendar_scheduler --config=./
+
+run-sender:
+	./calendar_sender --config=./
+
+.PHONY: run-calendar run-scheduler run-sender
