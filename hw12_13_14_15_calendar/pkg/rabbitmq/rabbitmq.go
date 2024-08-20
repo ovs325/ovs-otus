@@ -16,13 +16,16 @@ type RabbitMQ struct {
 }
 
 func NewRabbitMQ(url, queue string) (res *RabbitMQ, err error) {
-	if res.conn, err = amqp.Dial(url); err != nil {
+	res = &RabbitMQ{}
+	fmt.Printf("RabbitMQ: a new instance of RabbitMQ has been received: url = %s, queue - %s", url, queue)
+	res.conn, err = amqp.Dial(url)
+	if err != nil {
 		return nil, fmt.Errorf("failed to connect to RabbitMQ: %w", err)
 	}
 	if res.Channel, err = res.conn.Channel(); err != nil {
 		return nil, fmt.Errorf("failed to open a channel: %w", err)
 	}
-	_, err = res.Channel.QueueDeclare(
+	q, err := res.Channel.QueueDeclare(
 		queue,
 		true,  // durable
 		false, // delete when unused
@@ -33,7 +36,31 @@ func NewRabbitMQ(url, queue string) (res *RabbitMQ, err error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to declare a queue: %w", err)
 	}
+	res.Queue = q.Name
+	if err := res.Channel.Qos(1, 0, true); err != nil {
+		return nil, fmt.Errorf("failed to set QoS: %w", err)
+	}
 	return res, nil
+}
+
+func (r *RabbitMQ) Consume() (msgs <-chan amqp.Delivery, err error) {
+	msgs, err = r.Channel.Consume(
+		r.Queue,
+		"",
+		true,
+		false,
+		false,
+		false,
+		nil,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("Error registering consumer: %w", err)
+	}
+	return msgs, nil
+}
+
+func (r *RabbitMQ) GetNameQueue() string {
+	return r.Queue
 }
 
 func (r *RabbitMQ) Publish(message interface{}) (err error) {

@@ -1,57 +1,4 @@
-package scheduler
-
-// import (
-//     "context"
-//     "log"
-//     "time"
-
-//     "gopkg.in/yaml.v2"
-//     "github.com/ovs325/ovs-otus/hw12_13_14_15_calendar/internal/rabbitmq"
-//     "github.com/ovs325/ovs-otus/hw12_13_14_15_calendar/internal/scheduler"
-//     "github.com/ovs325/ovs-otus/hw12_13_14_15_calendar/internal/sender"
-// 	cf "github.com/ovs325/ovs-otus/hw12_13_14_15_calendar/internal/config"
-// )
-
-// func main() {
-// 	...
-// 	var cfg cf.Config
-// 	rabbitDSN := fmt.Spintf(
-// 		"amqp://%s:%s@%s:%v/",
-// 		cfg.Rabbit.User,
-// 		cfg.Rabbit.Password,
-// 		cfg.Rabbit.Host,
-// 		cfg.Rabbir.Port,
-// 	)
-//     // Подключение к RabbitMQ
-//     rabbitMQ, err := rabbitmq.NewRabbitMQ(rabbitDSN, cfg.RabbitMQ.Queue)
-//     if err != nil {
-//         log.Fatalf("Error initializing RabbitMQ: %v", err)
-//     }
-//     defer rabbitMQ.Close()
-
-//     // Создание контекста
-//     ctx, cancel := context.WithCancel(context.Background())
-//     defer cancel()
-
-//     // Запуск планировщика
-//     sched := scheduler.NewScheduler(db, rabbitMQ, parseInterval(cfg.Scheduler.Interval))
-//     go sched.Start(ctx)
-
-//     // Запуск рассыльщика
-//     snd := sender.NewSender(rabbitMQ)
-//     go snd.Start(ctx)
-
-//     // Ожидание завершения процессов
-//     select {}
-// }
-
-// func parseInterval(interval string) time.Duration {
-//     d, err := time.ParseDuration(interval)
-//     if err != nil {
-//         log.Fatalf("Error parsing interval: %v", err)
-//     }
-//     return d
-// }
+package main
 
 import (
 	"context"
@@ -124,6 +71,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+	logger.Info("Scheduller:", "interval", cfgSh.Interval)
 
 	errCh := make(chan error)
 
@@ -140,9 +88,12 @@ func main() {
 		errCh <- scheduler.Start(ctx)
 	}()
 
+	logger.Info("Scheduller is start")
 	select {
 	case err := <-errCh:
+		logger.Error("Scheduller sent an error")
 		panic(err)
 	case <-sigs:
+		logger.Info("Scheduller has received a signal")
 	}
 }

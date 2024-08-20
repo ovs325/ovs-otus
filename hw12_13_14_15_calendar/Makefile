@@ -37,9 +37,6 @@ lint: install-lint-deps
 
 .PHONY: build run build-img run-img version test lint
 
-postgr: 
-	docker run --rm -d -e POSTGRES_PASSWORD=pass -e POSTGRES_USER=user -e POSTGRES_DB=calendar -p 7777:5432 postgres
-
 install_prot: 
 	sudo apt install protobuf-compiler
 	go get google.golang.org/protobuf/cmd/protoc-gen-go@latest
@@ -62,8 +59,13 @@ compile:
 prot:
 	protoc --proto_path=. --go-grpc_out=./grpc --go_out=./grpc --go-grpc_opt=paths=import --go_opt=paths=import ./proto/event_service.proto
 
+
+postgr: 
+	docker run --rm -d -e POSTGRES_PASSWORD=pass -e POSTGRES_USER=user -e POSTGRES_DB=calendar -p 7777:5432 postgres
+
 rabbit: 
 	docker run -d --name rabbitmq -p 5672:5672 -p 15672:15672 rabbitmq:3-management
+
 
 all: calendar calendar_scheduler calendar_sender
 

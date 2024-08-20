@@ -6,7 +6,7 @@ import (
 	"fmt"
 
 	pk "github.com/ovs325/ovs-otus/hw12_13_14_15_calendar/pkg"
-	rb "github.com/ovs325/ovs-otus/hw12_13_14_15_calendar/pkg/rabbitmq"
+	"github.com/streadway/amqp"
 )
 
 type Logger interface {
@@ -15,29 +15,27 @@ type Logger interface {
 }
 
 type Sender struct {
-	rabbitMQ *rb.RabbitMQ
+	qManager QueueManager
 	log      Logger
 }
 
-func NewSender(rb *rb.RabbitMQ, lg Logger) (*Sender, error) {
-	if rb == nil {
+type QueueManager interface {
+	Consume() (msgs <-chan amqp.Delivery, err error)
+	GetNameQueue() string
+}
+
+func NewSender(qm QueueManager, lg Logger) (*Sender, error) {
+	if qm == nil {
 		return nil, fmt.Errorf("rabbir for Scheduller is nil!")
 	}
-	return &Sender{rabbitMQ: rb, log: lg}, nil
+	return &Sender{qManager: qm, log: lg}, nil
 }
 
 func (s *Sender) Start(ctx context.Context) error {
-	msgs, err := s.rabbitMQ.Channel.Consume(
-		s.rabbitMQ.Queue,
-		"",
-		true,
-		false,
-		false,
-		false,
-		nil,
-	)
+	s.log.Info("Sender is start!", "Queue", s.qManager.GetNameQueue())
+	msgs, err := s.qManager.Consume()
 	if err != nil {
-		return fmt.Errorf("Error registering consumer: %w", err)
+		return fmt.Errorf("Error start consumer: %w", err)
 	}
 	for {
 		select {

@@ -1,4 +1,4 @@
-package sender
+package main
 
 import (
 	"context"
@@ -18,7 +18,7 @@ import (
 var configFile string
 
 func init() {
-	flag.StringVar(&configFile, "config", "sender_config.yaml", "Path to sender configuration file")
+	flag.StringVar(&configFile, "config", "../../", "Path to sender configuration file")
 }
 
 func main() {
@@ -38,7 +38,7 @@ func main() {
 
 	rabbitMQ, err := rabbitmq.NewRabbitMQ(cfgCl.Rabbit.GetRabbitDSN(), cfgCl.Rabbit.Queue)
 	if err != nil {
-		log.Fatalf("Error initializing RabbitMQ: %v", err)
+		logger.Error("Error initializing RabbitMQ", "error", err.Error())
 	}
 	ctx, cancel := context.WithCancel(context.Background())
 
@@ -71,10 +71,11 @@ func main() {
 	go func() {
 		errCh <- snd.Start(ctx)
 	}()
-
 	select {
 	case err := <-errCh:
+		logger.Error("Sender sent an error", "error", err.Error())
 		panic(err)
 	case <-sigs:
+		logger.Info("Sender has received a signal")
 	}
 }
