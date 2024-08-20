@@ -6,11 +6,11 @@ import (
 	"github.com/spf13/viper"
 )
 
-type SenderConfig struct {
+type SndConfig struct {
 	RabbitConfigPath string `mapstructure:"rabbitmq_path"`
 }
 
-func NewSenderConfig(path string) (SenderConfig, error) {
+func NewSenderConfig(path string) (SndConfig, error) {
 	viper.AddConfigPath(path)
 	viper.SetConfigName("config_sender")
 	viper.SetConfigType("yaml")
@@ -20,13 +20,13 @@ func NewSenderConfig(path string) (SenderConfig, error) {
 
 	err := viper.ReadInConfig()
 	if err != nil {
-		return SenderConfig{}, fmt.Errorf("failed to read config_sender: %w", err)
+		return SndConfig{}, fmt.Errorf("failed to read config_sender: %w", err)
 	}
 
-	var config SenderConfig
+	var config SndConfig
 	err = viper.Unmarshal(&config)
 	if err != nil {
-		return SenderConfig{}, fmt.Errorf("failed to unmarshal config_sender: %w", err)
+		return SndConfig{}, fmt.Errorf("failed to unmarshal config_sender: %w", err)
 	}
 
 	return config, nil

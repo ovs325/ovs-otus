@@ -26,7 +26,7 @@ type QueueManager interface {
 
 func NewSender(qm QueueManager, lg Logger) (*Sender, error) {
 	if qm == nil {
-		return nil, fmt.Errorf("rabbir for Scheduller is nil!")
+		return nil, fmt.Errorf("rabbir for scheduller is nil!")
 	}
 	return &Sender{qManager: qm, log: lg}, nil
 }

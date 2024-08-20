@@ -10,8 +10,6 @@ import (
 	pk "github.com/ovs325/ovs-otus/hw12_13_14_15_calendar/pkg"
 )
 
-const timeParsingTempl = "15:04:05.999999"
-
 type Repo interface {
 	GetEventsForTimeAlarmInterval(
 		ctx context.Context, start, end time.Time, datePaginate cm.Paginate,
@@ -32,13 +30,13 @@ type QueueManager interface {
 func NewScheduler(db Repo, qm QueueManager, intervalStr string) (*Scheduler, error) {
 	switch {
 	case db == nil:
-		return nil, fmt.Errorf("repo for Scheduller is nil!")
+		return nil, fmt.Errorf("repo for scheduller is nil!")
 	case qm == nil:
-		return nil, fmt.Errorf("rabbit for Scheduller is nil!")
+		return nil, fmt.Errorf("rabbit for scheduller is nil!")
 	}
 	duration, err := time.ParseDuration(intervalStr)
 	if err != nil {
-		return nil, fmt.Errorf("parse of time interval for Scheduller error: %w", err)
+		return nil, fmt.Errorf("parse of time interval for scheduller error: %w", err)
 	}
 	return &Scheduler{db: db, qManager: qm, interval: duration}, nil
 }
@@ -63,8 +61,7 @@ func (s *Scheduler) checkEvents(ctx context.Context) error {
 	t := time.Now()
 	events, err := s.db.GetEventsForTimeAlarmInterval(ctx, t, t.Add(2*s.interval), cm.Paginate{})
 	if err != nil {
-		return fmt.Errorf("Error fetching events: %w", err)
-
+		return fmt.Errorf("error fetching events: %w", err)
 	}
 	for _, event := range events.Content {
 		notification := pk.Notification{
@@ -74,10 +71,10 @@ func (s *Scheduler) checkEvents(ctx context.Context) error {
 			UserID: event.UserID,
 		}
 		if err := s.qManager.Publish(notification); err != nil {
-			return fmt.Errorf("Error publishing notification: %w", err)
+			return fmt.Errorf("error publishing notification: %w", err)
 		}
 		if err := s.db.DelEvent(ctx, event.ID); err != nil {
-			return fmt.Errorf("Error deleting events:", err)
+			return fmt.Errorf("error deleting events:", err)
 		}
 	}
 	return nil

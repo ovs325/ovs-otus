@@ -20,7 +20,7 @@ func NewRabbitMQ(url, queue string) (res *RabbitMQ, err error) {
 	fmt.Printf("RabbitMQ: a new instance of RabbitMQ has been received: url = %s, queue - %s", url, queue)
 	res.conn, err = amqp.Dial(url)
 	if err != nil {
-		return nil, fmt.Errorf("failed to connect to RabbitMQ: %w", err)
+		return nil, fmt.Errorf("failed to connect to rabbitmq: %w", err)
 	}
 	if res.Channel, err = res.conn.Channel(); err != nil {
 		return nil, fmt.Errorf("failed to open a channel: %w", err)
@@ -38,7 +38,7 @@ func NewRabbitMQ(url, queue string) (res *RabbitMQ, err error) {
 	}
 	res.Queue = q.Name
 	if err := res.Channel.Qos(1, 0, true); err != nil {
-		return nil, fmt.Errorf("failed to set QoS: %w", err)
+		return nil, fmt.Errorf("failed to set 'qos': %w", err)
 	}
 	return res, nil
 }
@@ -54,7 +54,7 @@ func (r *RabbitMQ) Consume() (msgs <-chan amqp.Delivery, err error) {
 		nil,
 	)
 	if err != nil {
-		return nil, fmt.Errorf("Error registering consumer: %w", err)
+		return nil, fmt.Errorf("error registering consumer: %w", err)
 	}
 	return msgs, nil
 }
