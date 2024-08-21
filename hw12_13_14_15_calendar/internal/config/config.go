@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	rb "github.com/ovs325/ovs-otus/hw12_13_14_15_calendar/pkg/rabbitmq"
-
 	"github.com/spf13/viper"
 )
 
