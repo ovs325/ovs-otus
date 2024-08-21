@@ -27,3 +27,11 @@ grpc_server:
 swagger_server:
   host: localhost
   port: 7781
+
+rabbitmq:
+  # url: "amqp://guest:guest@localhost:5672/"
+  host: localhost
+  port: 5672
+  user: guest
+  password: guest
+  queue: "notifications"

@@ -31,7 +31,7 @@ func NewEventServiceServer() *EventServiceServer {
 	return &EventServiceServer{}
 }
 
-func (s *ProtoServer) Start(cnf *cf.Config) error {
+func (s *ProtoServer) Start(cnf *cf.CalendarConfig) error {
 	s.log.Info("the GRPC-server starts")
 
 	dsn := fmt.Sprintf("%s:%s", cnf.GrpcServer.Host, cnf.GrpcServer.Port)

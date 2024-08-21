@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"log"
@@ -20,10 +21,16 @@ import (
 	sq "github.com/ovs325/ovs-otus/hw12_13_14_15_calendar/internal/storage/sql"
 )
 
+var (
+	release   = "UNKNOWN"
+	buildDate = "UNKNOWN"
+	gitHash   = "UNKNOWN"
+)
+
 var configFile string
 
 func init() {
-	flag.StringVar(&configFile, "config", "../../", "Path to configuration file")
+	flag.StringVar(&configFile, "config", "../../", "Path to calendar configuration file")
 }
 
 func main() {
@@ -34,7 +41,7 @@ func main() {
 		return
 	}
 
-	config, err := cf.NewConfig(configFile)
+	config, err := cf.NewCalendarConfig(configFile)
 	if err != nil {
 		fmt.Printf("failed to load config: %s", err.Error())
 	}
@@ -82,7 +89,7 @@ func main() {
 		if errGr != nil || errHTTP != nil {
 			os.Exit(1)
 		}
-		fmt.Println("Microservice has closed!!")
+		fmt.Println("Microservice has closed")
 	}()
 
 	// start server.
@@ -108,5 +115,19 @@ func main() {
 	case err := <-errCh:
 		panic(err)
 	case <-sigs:
+	}
+}
+
+func printVersion() {
+	if err := json.NewEncoder(os.Stdout).Encode(struct {
+		Release   string
+		BuildDate string
+		GitHash   string
+	}{
+		Release:   release,
+		BuildDate: buildDate,
+		GitHash:   gitHash,
+	}); err != nil {
+		fmt.Printf("error while decode version info: %v\n", err)
 	}
 }

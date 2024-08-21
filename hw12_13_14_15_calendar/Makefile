@@ -4,6 +4,8 @@ DOCKER_IMG="calendar:develop"
 GIT_HASH := $(shell git log --format="%h" -n 1)
 LDFLAGS := -X main.release="develop" -X main.buildDate=$(shell date -u +%Y-%m-%dT%H:%M:%S) -X main.gitHash=$(GIT_HASH)
 
+.PHONY: all clean
+
 build:
 	go build -v -o $(BIN) -ldflags "$(LDFLAGS)" ./cmd/calendar
 
@@ -26,7 +28,7 @@ test:
 	go test -race ./internal/...
 
 install-lint-deps:
-	(which golangci-lint > /dev/null) || curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(shell go env GOPATH)/bin v1.59.1
+	(which golangci-lint > /dev/null) || curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(shell go env GOPATH)/bin v1.60.1
 
 
 
@@ -34,9 +36,6 @@ lint: install-lint-deps
 	golangci-lint run ./...
 
 .PHONY: build run build-img run-img version test lint
-
-postgr: 
-	docker run --rm -d -e POSTGRES_PASSWORD=pass -e POSTGRES_USER=user -e POSTGRES_DB=calendar -p 7777:5432 postgres
 
 install_prot: 
 	sudo apt install protobuf-compiler
@@ -59,3 +58,36 @@ compile:
 
 prot:
 	protoc --proto_path=. --go-grpc_out=./grpc --go_out=./grpc --go-grpc_opt=paths=import --go_opt=paths=import ./proto/event_service.proto
+
+
+postgr: 
+	docker run --rm -d -e POSTGRES_PASSWORD=pass -e POSTGRES_USER=user -e POSTGRES_DB=calendar -p 7777:5432 postgres
+
+rabbit: 
+	docker run -d --name rabbitmq -p 5672:5672 -p 15672:15672 rabbitmq:3-management
+
+
+all: calendar calendar_scheduler calendar_sender
+
+calendar: cmd/calendar/main.go
+	go build -o calendar cmd/calendar/main.go
+
+calendar_scheduler: cmd/scheduler/main.go
+	go build -o calendar_scheduler cmd/scheduler/main.go
+
+calendar_sender: cmd/sender/main.go
+	go build -o calendar_sender cmd/sender/main.go
+
+clean:
+	rm -f calendar calendar_scheduler calendar_sender
+
+run-calendar:
+	./calendar --config=./
+
+run-scheduler:
+	./calendar_scheduler --config=./
+
+run-sender:
+	./calendar_sender --config=./
+
+.PHONY: run-calendar run-scheduler run-sender

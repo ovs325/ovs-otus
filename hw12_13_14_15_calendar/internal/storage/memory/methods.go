@@ -43,9 +43,22 @@ func (r *MemRepo) DelEvent(_ context.Context, id int64) error {
 	return nil
 }
 
-// Список Событий в промежутке дат.
 func (r *MemRepo) GetEventsForTimeInterval(
+	ctx context.Context, start, end time.Time, datePaginate cm.Paginate,
+) (tp.QueryPage[tp.EventModel], error) {
+	return r.getItemsForTimeInterval(ctx, "date", start, end, datePaginate)
+}
+
+func (r *MemRepo) GetEventsForTimeAlarmInterval(
+	ctx context.Context, start, end time.Time, datePaginate cm.Paginate,
+) (tp.QueryPage[tp.EventModel], error) {
+	return r.getItemsForTimeInterval(ctx, "time_alarm", start, end, datePaginate)
+}
+
+// Список Событий в промежутке дат.
+func (r *MemRepo) getItemsForTimeInterval(
 	_ context.Context,
+	fieldName string,
 	start, end time.Time,
 	datePaginate cm.Paginate,
 ) (tp.QueryPage[tp.EventModel], error) {
@@ -53,8 +66,15 @@ func (r *MemRepo) GetEventsForTimeInterval(
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 	for _, event := range r.Repo {
-		if !event.Date.Before(start) && event.Date.Before(end) {
-			events = append(events, event)
+		switch fieldName {
+		case "date":
+			if !event.Date.Before(start) && event.Date.Before(end) {
+				events = append(events, event)
+			}
+		case "time_alarm":
+			if !event.TimeAlarm.Before(start) && event.TimeAlarm.Before(end) {
+				events = append(events, event)
+			}
 		}
 	}
 	sort.Slice(events, func(i, j int) bool {
