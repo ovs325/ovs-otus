@@ -1,0 +1,29 @@
+version: '3'
+
+networks:
+  brutenetwork:
+    driver: bridge
+
+services:
+  integration_tests:
+    build: ./tests
+    command: "true"
+    links:
+      - bruteforce_service_tst
+    networks:
+      - brutenetwork
+  bruteforce_service_tst:
+    build:
+      context: ./bruteforce
+      dockerfile: Dockerfile
+    # container_name: bruteforce_service_container
+    restart: on-failure
+    expose:
+      - "3009"
+    # ports:
+    #   - "3009:3009"
+    environment:
+      - DOCKER_CONF_PATH=/bin/
+    command: /bin/bruteforce_service
+    networks:
+      - brutenetwork
