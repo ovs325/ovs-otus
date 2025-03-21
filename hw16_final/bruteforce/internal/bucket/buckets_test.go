@@ -18,7 +18,9 @@ var (
 
 func TestNewLeakyBucket(t *testing.T) {
 	sr.SetElapsed(0)
+	sr.GetNowMu.Lock()
 	sr.GetNow = func() time.Time { return sr.Start.Add(sr.GetElapsed()) }
+	sr.GetNowMu.Unlock()
 	rate := 1.0
 	capacity := int64(5)
 	bucket := NewBucket("test", rate, capacity).(*Bucket)
@@ -33,7 +35,9 @@ func TestNewLeakyBucket(t *testing.T) {
 
 func TestBucketOk(t *testing.T) {
 	sr.SetElapsed(0)
+	sr.GetNowMu.Lock()
 	sr.GetNow = func() time.Time { return sr.Start.Add(sr.GetElapsed()) }
+	sr.GetNowMu.Unlock()
 	rate := 1.0
 	capacity := int64(5)
 	bucket := NewBucket("test", rate, capacity).(*Bucket)
@@ -108,7 +112,9 @@ func TestBucketOk(t *testing.T) {
 
 func TestOverFlow(t *testing.T) {
 	sr.SetElapsed(0)
+	sr.GetNowMu.Lock()
 	sr.GetNow = func() time.Time { return sr.Start.Add(sr.GetElapsed()) }
+	sr.GetNowMu.Unlock()
 
 	rate := 60.0
 	capacity := int64(1000)

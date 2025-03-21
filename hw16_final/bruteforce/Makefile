@@ -57,6 +57,9 @@ net:
 		echo "Network '$(NET)' already exists."; \
 	fi
 
+test:
+	go test -race -count 100 ./...
+
 # Дерево каталогов в буфер обмена
 tree:
 	tree | xclip -selection clipboard

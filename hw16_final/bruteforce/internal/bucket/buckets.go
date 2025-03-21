@@ -75,7 +75,10 @@ func (b *Bucket) DeadLine() time.Duration {
 
 // Корзина должна быть обнулена?
 func (b *Bucket) IsReset() bool {
-	return !sr.GetNow().Before(b.expiry)
+	sr.GetNowMu.Lock()
+	nw := sr.GetNow()
+	sr.GetNowMu.Unlock()
+	return !nw.Before(b.expiry)
 }
 
 func (b *Bucket) IsNilPointer(i any) bool {

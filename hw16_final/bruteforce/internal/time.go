@@ -1,6 +1,7 @@
 package buckets
 
 import (
+	"sync"
 	"sync/atomic"
 	"time"
 
@@ -10,6 +11,7 @@ import (
 // Секунда в актуальном формате
 const Sec64 = float64(time.Second)
 
+var GetNowMu sync.RWMutex
 var GetNow = time.Now
 
 // Стартовое время.

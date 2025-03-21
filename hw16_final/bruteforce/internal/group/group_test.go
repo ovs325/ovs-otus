@@ -35,7 +35,10 @@ func TestNewGroup(t *testing.T) {
 }
 
 func TestGroupSimpleOk(t *testing.T) {
+	sr.GetNowMu.Lock()
 	sr.GetNow = func() time.Time { return sr.Start.Add(sr.GetElapsed()) }
+	sr.GetNowMu.Unlock()
+
 	rate := 1.0
 	capacity := int64(5)
 	id := "127.0.0.1"
@@ -115,7 +118,9 @@ func TestGroupSimpleOk(t *testing.T) {
 }
 
 func TestGroupVariedOk(t *testing.T) {
+	sr.GetNowMu.Lock()
 	sr.GetNow = func() time.Time { return sr.Start.Add(sr.GetElapsed()) }
+	sr.GetNowMu.Unlock()
 	rate := 60.0
 	capacity := int64(1000)
 	id := "127.0.0.1"
@@ -194,7 +199,9 @@ func TestPeriodicPrune(t *testing.T) {
 
 func TestMain(m *testing.M) {
 	// Выдает значение стартового времени + сдвиг Elapsed
+	sr.GetNowMu.Lock()
 	sr.GetNow = func() time.Time { return sr.Start.Add(sr.GetElapsed()) }
+	sr.GetNowMu.Unlock()
 
 	os.Exit(m.Run())
 }

@@ -1,4 +1,6 @@
-test:
+.PHONY: all test
+
+test_integ:
 	set -e ;\
 	docker-compose -f docker-compose.test.yml up --build -d ;\
 	test_status_code=0 ;\
@@ -6,7 +8,7 @@ test:
 	docker-compose -f docker-compose.test.yml down ;\
 	exit $$test_status_code ;
 
-test-cleanup:
+test_integ-cleanup:
 	docker-compose -f docker-compose.test.yml down \
         --rmi local \
 		--volumes \
@@ -38,3 +40,12 @@ del:
 
 tree:
 	tree | xclip -selection clipboard
+
+test:
+	$(MAKE) -C bruteforce test
+	
+install-lint-deps:
+	(which golangci-lint > /dev/null) || curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(shell go env GOPATH)/bin v1.60.1
+
+lint: install-lint-deps
+	golangci-lint run ./...
