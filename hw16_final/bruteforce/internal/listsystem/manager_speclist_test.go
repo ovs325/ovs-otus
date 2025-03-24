@@ -9,12 +9,12 @@ import (
 
 func TestSpecList(t *testing.T) {
 	// Создаем экземпляр SpecList для тестирования
-	seeker := SearchEngineIp
+	seeker := SearchEngineIP
 	verifier := SubnetNameVerifier
 	specList := NewSpecList("id", 1000, seeker, verifier)
 
 	// Проверяем добавление ID
-	assert.True(t, specList.AddId("192.1.1.0/25", true), "Expected AddId to succeed, but it failed")
+	assert.True(t, specList.AddID("192.1.1.0/25", true), "Expected AddID to succeed, but it failed")
 
 	// Проверяем наличие ID
 	isFound, isBlack, err := specList.ToFind("192.1.1.0")
@@ -28,7 +28,7 @@ func TestSpecList(t *testing.T) {
 	assert.False(t, bool(isBlack))
 
 	// Проверяем удаление ID
-	assert.True(t, specList.DelId("192.1.1.0/25"), "Expected DelId to succeed, but it failed")
+	assert.True(t, specList.DelID("192.1.1.0/25"), "Expected DelID to succeed, but it failed")
 
 	// Проверяем отсутствие ID после удаления
 	isFound, _, _ = specList.ToFind("192.1.1.0")

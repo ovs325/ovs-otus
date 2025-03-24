@@ -6,7 +6,7 @@ import (
 
 // https://golang.org/pkg/container/heap/
 //
-// Приорететная очередь корзин
+// Приорететная очередь корзин.
 type queyeBuckets []*Bucket
 
 func NewQueyeBuckets(volume int) gr.Queue {
@@ -51,12 +51,12 @@ func (p *queyeBuckets) Reset(lenQueue int) {
 // Корзины, которые пусты или появятся раньше всего, находятся на вершине кучи.
 // (Окажутся в начале Приорететной очереди с индексом 0 и будут выданы функцией GetFirstDrops()).
 // Это позволяет быстро сокращать количество пустых корзин, что очень хорошо масштабируется.
-// Приоритет настраивается каждый раз, когда в очередь добавляется какое-либо количество через Push()
+// Приоритет настраивается каждый раз, когда в очередь добавляется какое-либо количество через Push().
 func (p queyeBuckets) GetFirstDrops() any {
 	if p.Len() > 0 {
 		bucket := p[0]
 		return bucket
 	}
-	var empty *Bucket = nil
+	var empty *Bucket
 	return empty
 }

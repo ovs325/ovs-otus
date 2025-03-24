@@ -7,9 +7,8 @@ import (
 	tp "bruteforce/internal/types"
 )
 
-// Проверка принадлежности IP к подсети
-func SearchEngineIp(subnetMap map[string]tp.IsBlack, ipStr string) (isFound bool, isBlack tp.IsBlack, err error) {
-	isFound = false
+// Проверка принадлежности IP к подсети.
+func SearchEngineIP(subnetMap map[string]tp.IsBlack, ipStr string) (isFound bool, isBlack tp.IsBlack, err error) {
 	for subnetStr, typeList := range subnetMap {
 		ip := net.ParseIP(ipStr)
 		if ip == nil {
@@ -19,14 +18,14 @@ func SearchEngineIp(subnetMap map[string]tp.IsBlack, ipStr string) (isFound bool
 		if err != nil {
 			continue
 		}
-		if isFound = subnet.Contains(ip); isFound {
+		if subnet.Contains(ip) {
 			return true, typeList, nil
 		}
 	}
 	return false, false, nil
 }
 
-// проверка правильности наименования подсети
+// проверка правильности наименования подсети.
 func SubnetNameVerifier(subnetStr string) (ok bool) {
 	if _, _, err := net.ParseCIDR(subnetStr); err != nil {
 		return false
@@ -34,13 +33,13 @@ func SubnetNameVerifier(subnetStr string) (ok bool) {
 	return true
 }
 
-// Базовая проверка принадлежности id к какому-либо списку
+// Базовая проверка принадлежности id к какому-либо списку.
 func SearchEngineCommon(specListMap map[string]tp.IsBlack, id string) (isFound bool, isBlack tp.IsBlack, err error) {
 	isBlack, isFound = specListMap[id]
 	return isFound, isBlack, nil
 }
 
-// Базовая проверка правильности наименования id
-func CommonNameVerifier(subnetStr string) (ok bool) {
+// Базовая проверка правильности наименования id.
+func CommonNameVerifier(_ string) (ok bool) {
 	return true
 }

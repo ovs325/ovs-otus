@@ -39,7 +39,7 @@ func (s *SpecList) ToFind(id string) (isFound bool, isBlack tp.IsBlack, err erro
 	return s.idSeeker(s.idsMap, id)
 }
 
-func (s *SpecList) AddId(id string, isBlack tp.IsBlack) (ok bool) {
+func (s *SpecList) AddID(id string, isBlack tp.IsBlack) (ok bool) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 	if !s.keyVerifier(id) {
@@ -50,7 +50,7 @@ func (s *SpecList) AddId(id string, isBlack tp.IsBlack) (ok bool) {
 	return ok && val == isBlack
 }
 
-func (s *SpecList) DelId(id string) (ok bool) {
+func (s *SpecList) DelID(id string) (ok bool) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 	delete(s.idsMap, id)
@@ -68,6 +68,6 @@ func (s *SpecList) GetName() string {
 	return s.nameSpecList
 }
 
-func (s *SpecList) GetIdsMap() map[string]tp.IsBlack {
+func (s *SpecList) GetIDsMap() map[string]tp.IsBlack {
 	return s.idsMap
 }

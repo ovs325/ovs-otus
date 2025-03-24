@@ -48,7 +48,6 @@ func main() {
 
 	if config.IsTest {
 		sr.SetElapsed(0)
-
 		sr.GetNowMu.Lock()
 		sr.GetNow = func() time.Time { return sr.Start.Add(sr.GetElapsed()) }
 		sr.GetNowMu.Unlock()

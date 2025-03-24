@@ -4,9 +4,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/assert"
-
 	sr "bruteforce/internal"
+	"github.com/stretchr/testify/assert"
 )
 
 var (
@@ -66,9 +65,9 @@ func TestSwap(t *testing.T) {
 		queue.Push(NewBucket("test", 1.0, 5).(*Bucket))
 	}
 	i, j := 2, 4
-	bucket_i, bucket_j := queue[i], queue[j]
+	bucketI, bucketJ := queue[i], queue[j]
 	queue.Swap(i, j)
-	assert.False(t, bucket_i != queue[j] || bucket_j != queue[i], "Элементы не были поменяны местами")
+	assert.False(t, bucketI != queue[j] || bucketJ != queue[i], "Элементы не были поменяны местами")
 }
 
 func TestReset(t *testing.T) {

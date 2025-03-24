@@ -6,24 +6,22 @@ import (
 	"log"
 	"net/http"
 
-	cf "bruteforce/config"
-
-	rt "bruteforce/api/routing"
-	lg "bruteforce/internal/logger"
-
+	"bruteforce/api/routing"
+	"bruteforce/config"
+	"bruteforce/internal/logger"
 	"github.com/gorilla/mux"
 )
 
 type HTTPServer struct {
-	log lg.Logger
+	log logger.Logger
 	srv *http.Server
 }
 
-func NewHTTPServer(logger lg.Logger) *HTTPServer {
+func NewHTTPServer(logger logger.Logger) *HTTPServer {
 	return &HTTPServer{log: logger}
 }
 
-func (s *HTTPServer) Start(_ context.Context, cfg *cf.Config, routes rt.Router) error {
+func (s *HTTPServer) Start(_ context.Context, cfg *config.Config, routes routing.Router) error {
 	s.log.Info("the Http-server starts")
 	r := mux.NewRouter()
 	for path, params := range routes.Router {

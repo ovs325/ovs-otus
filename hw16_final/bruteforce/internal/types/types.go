@@ -7,7 +7,7 @@ type IsBlack bool
 type RequestParams map[string]string
 
 type AllBucketParams struct {
-	Id           string        `json:"id"`           // Имя корзины
+	ID           string        `json:"id"`           // Имя корзины
 	Capacity     int64         `json:"capacity"`     // Емкость в каплях
 	FreeCapacity int64         `json:"freeCapacity"` // Свободная емкость корзины в каплях.
 	DropsSum     int64         `json:"dropsSum"`     // Объем недокапанного запаса в каплях.

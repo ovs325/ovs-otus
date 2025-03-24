@@ -35,8 +35,8 @@ func NewHandlersGroup(mng AbstractManager, log lg.Logger) Handlers {
 }
 
 // Попытка авторизации.
-// url: /is_allowed
-// Method: PATCH
+// url: /is_allowed .
+// Method: PATCH .
 // Body:
 //
 //	{
@@ -47,7 +47,7 @@ func NewHandlersGroup(mng AbstractManager, log lg.Logger) Handlers {
 //		}
 //	}
 //
-// Response: text "true"/"false"
+// Response: text "true"/"false" .
 func (h *Handlers) IsAllowedHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		params, err := NewIsAllowedRequest(r)
@@ -103,7 +103,7 @@ func (h *Handlers) AddHandler(isBlack bool) http.HandlerFunc {
 			ClientError(w, "ошибка при получении параметра 'network'")
 			return
 		}
-		var nameList = "blacklist"
+		nameList := "blacklist"
 		if !isBlack {
 			nameList = "whitelist"
 		}
@@ -130,7 +130,7 @@ func (h *Handlers) DelHandler(isBlack bool) http.HandlerFunc {
 			ClientError(w, "ошибка при получении параметра 'network'")
 			return
 		}
-		var nameList = "blacklist"
+		nameList := "blacklist"
 		if !isBlack {
 			nameList = "whitelist"
 		}
@@ -143,18 +143,18 @@ func (h *Handlers) DelHandler(isBlack bool) http.HandlerFunc {
 	}
 }
 
-// Api для пингования на готовность сервиса проходить тесты
+// Api для пингования на готовность сервиса проходить тесты.
 func (h *Handlers) OkHandler() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, _ *http.Request) {
 		NewResponse(w).SetStatus(http.StatusOK).Empty()
 	}
 }
 
-// Api для тестового режима: все параметры всех групп
+// Api для тестового режима: все параметры всех групп.
 // url: /params/all
 // Query:
 //
-//	add - сдвиг времени относительно стартового в секундах
+//	add - сдвиг времени относительно стартового в секундах.
 func (h *Handlers) GetAllGroupsParamsHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		addRaw := r.URL.Query().Get("add")

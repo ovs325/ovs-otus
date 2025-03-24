@@ -1,11 +1,12 @@
 package handlers
 
 import (
-	tp "bruteforce/internal/types"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"strings"
+
+	tp "bruteforce/internal/types"
 )
 
 type CommonContentRequest struct {

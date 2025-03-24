@@ -1,9 +1,6 @@
 package manager
 
 import (
-	cf "bruteforce/config"
-	mk "bruteforce/internal/manager/mocks"
-	tp "bruteforce/internal/types"
 	"context"
 	"errors"
 	"fmt"
@@ -12,8 +9,15 @@ import (
 	"sync"
 	"testing"
 
+	cf "bruteforce/config"
+	mk "bruteforce/internal/manager/mocks"
+	tp "bruteforce/internal/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+)
+
+const (
+	localhost = "localhost"
 )
 
 var (
@@ -28,6 +32,7 @@ var (
 )
 
 func initGlobalVars(t *testing.T) (err error) {
+	t.Helper()
 	initV := func() {
 		Ctx = context.Background()
 
@@ -61,7 +66,7 @@ is_test: true
 		tempDir := t.TempDir()
 
 		configPathTempDir := filepath.Join(tempDir, "config.yaml")
-		assert.Nil(t, os.WriteFile(configPathTempDir, []byte(configContent), 0644), "failed to write config file")
+		assert.Nil(t, os.WriteFile(configPathTempDir, []byte(configContent), 0o644), "failed to write config file")
 
 		// Загружаем конфигурацию
 		Cfg, err = cf.LoadConfig(tempDir)
@@ -116,7 +121,7 @@ func TestNewManager(t *testing.T) {
 
 	tempDir := t.TempDir()
 	configPathTempDir := filepath.Join(tempDir, "config.yaml")
-	assert.Nil(t, os.WriteFile(configPathTempDir, []byte(configContent), 0644), "failed to write config file")
+	assert.Nil(t, os.WriteFile(configPathTempDir, []byte(configContent), 0o644), "failed to write config file")
 	manager, err = NewManager(tempDir)
 	assert.NoError(t, err)
 	require.NotNil(t, manager)
@@ -127,14 +132,13 @@ func TestNewManager(t *testing.T) {
 		assert.Equal(t, params.LeakageRate, groupParams.LeakageRate)
 		assert.Equal(t, params.LenQueue, groupParams.LenQueue)
 	}
-
 }
 
 func TestNewGroup(t *testing.T) {
 	assert.NoError(t, initGlobalVars(t))
 	tempDir := t.TempDir()
 	configPathTempDir := filepath.Join(tempDir, "config.yaml")
-	assert.Nil(t, os.WriteFile(configPathTempDir, []byte(configContent), 0644), "failed to write config file")
+	assert.Nil(t, os.WriteFile(configPathTempDir, []byte(configContent), 0o644), "failed to write config file")
 	manager, err := NewManager(tempDir)
 	assert.NoError(t, err)
 	require.NotNil(t, manager)
@@ -177,14 +181,13 @@ func TestNewGroup(t *testing.T) {
 	assert.Equal(t, int64(10), manager.cfg.Params["cfrParamsNil"].Capacity)
 	assert.Equal(t, 1.0, manager.cfg.Params["cfrParamsNil"].LeakageRate)
 	assert.Equal(t, int64(100), manager.cfg.Params["cfrParamsNil"].LenQueue)
-
 }
 
 func TestRecreateGroup(t *testing.T) {
 	assert.NoError(t, initGlobalVars(t))
 	tempDir := t.TempDir()
 	configPathTempDir := filepath.Join(tempDir, "config.yaml")
-	assert.Nil(t, os.WriteFile(configPathTempDir, []byte(configContent), 0644), "failed to write config file")
+	assert.Nil(t, os.WriteFile(configPathTempDir, []byte(configContent), 0o644), "failed to write config file")
 	manager, err := NewManager(tempDir)
 	assert.NoError(t, err)
 	require.NotNil(t, manager)
@@ -206,7 +209,7 @@ func TestRecreateGroup(t *testing.T) {
 func TestIsAllowed(t *testing.T) {
 	require.NoError(t, initGlobalVars(t))
 
-	name, id := "ip", "localhost"
+	name, id := "ip", localhost
 	drops := int64(1)
 	testErr := errors.New("Тестовая ошибка")
 
@@ -231,28 +234,27 @@ func TestIsAllowed(t *testing.T) {
 func TestAddToSpecList(t *testing.T) {
 	require.NoError(t, initGlobalVars(t))
 
-	name, id := "ip", "localhost"
+	name, id := "ip", localhost
 
 	specListMock := specListMap[name]
 	assert.False(t, Manager.AddToSpecList("err", id, tp.IsBlack(true)))
 
-	specListMock.On("AddId", id, tp.IsBlack(true)).Return(true).Once()
+	specListMock.On("AddID", id, tp.IsBlack(true)).Return(true).Once()
 	assert.True(t, Manager.AddToSpecList(name, id, tp.IsBlack(true)))
-
 }
 
 func TestDelFromSpecList(t *testing.T) {
 	require.NoError(t, initGlobalVars(t))
 
-	name, id := "ip", "localhost"
+	name, id := "ip", localhost
 
 	specListMock := specListMap[name]
-	specListMock.On("DelId", id).Return(true).Once()
+	specListMock.On("DelID", id).Return(true).Once()
 
 	assert.False(t, Manager.DelFromSpecList("err", id))
 	assert.True(t, Manager.DelFromSpecList(name, id))
 
-	specListMock.On("DelId", id).Return(false).Once()
+	specListMock.On("DelID", id).Return(false).Once()
 	assert.False(t, Manager.DelFromSpecList(name, id))
 }
 

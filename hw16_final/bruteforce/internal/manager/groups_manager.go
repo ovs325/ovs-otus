@@ -10,7 +10,6 @@ import (
 	gr "bruteforce/internal/group"
 	sl "bruteforce/internal/listsystem"
 	tp "bruteforce/internal/types"
-
 	"github.com/fat0troll/durufmt"
 )
 
@@ -29,11 +28,11 @@ type GroupItem interface {
 //go:generate mockery --name SpecListsManager
 type SpecListsManager interface {
 	GetName() string
-	AddId(id string, isBlack tp.IsBlack) (ok bool)
-	DelId(id string) (ok bool)
+	AddID(id string, isBlack tp.IsBlack) (ok bool)
+	DelID(id string) (ok bool)
 	ToFind(id string) (isFound bool, isBlack tp.IsBlack, err error)
 	Reset()
-	GetIdsMap() map[string]tp.IsBlack
+	GetIDsMap() map[string]tp.IsBlack
 }
 
 type GroupManager struct {
@@ -64,7 +63,7 @@ func NewManager(path string) (*GroupManager, error) {
 			bk.NewQueyeBuckets,
 		)
 		if name == "ip" {
-			manager.specListMap[name] = sl.NewSpecList(name, 100000, sl.SearchEngineIp, sl.SubnetNameVerifier)
+			manager.specListMap[name] = sl.NewSpecList(name, 100000, sl.SearchEngineIP, sl.SubnetNameVerifier)
 		} else {
 			manager.specListMap[name] = sl.NewSpecList(name, 100000, sl.SearchEngineCommon, sl.CommonNameVerifier)
 		}
@@ -72,19 +71,23 @@ func NewManager(path string) (*GroupManager, error) {
 	return &manager, nil
 }
 
-func (g *GroupManager) NewGroup(name string, params cf.GroupParams) error { // Через запрос
+func (g *GroupManager) NewGroup(name string, params cf.GroupParams) error {
 	if g.cfg == nil {
 		g.cfg = &cf.Config{Params: map[string]cf.GroupParams{name: params}}
-	} else {
-		if g.cfg.Params == nil {
-			g.cfg.Params = map[string]cf.GroupParams{name: params}
-		} else {
-			if _, ok := g.cfg.Params[name]; ok {
-				return fmt.Errorf("такая группа уже существует: name = %s", name)
-			}
-			g.cfg.Params[name] = params
-		}
+		return g.createBucketGroup(name, params) // Создаем группу и выходим
 	}
+	if g.cfg.Params == nil {
+		g.cfg.Params = map[string]cf.GroupParams{name: params}
+		return g.createBucketGroup(name, params) // Создаем группу и выходим
+	}
+	if _, ok := g.cfg.Params[name]; ok {
+		return fmt.Errorf("такая группа уже существует: name = %s", name)
+	}
+	g.cfg.Params[name] = params
+	return g.createBucketGroup(name, params)
+}
+
+func (g *GroupManager) createBucketGroup(name string, params cf.GroupParams) error {
 	g.lock.Lock()
 	defer g.lock.Unlock()
 
@@ -98,11 +101,10 @@ func (g *GroupManager) NewGroup(name string, params cf.GroupParams) error { // �
 		bk.NewQueyeBuckets,
 	)
 	if name == "ip" {
-		g.specListMap[name] = sl.NewSpecList(name, 100000, sl.SearchEngineIp, sl.SubnetNameVerifier)
+		g.specListMap[name] = sl.NewSpecList(name, 100000, sl.SearchEngineIP, sl.SubnetNameVerifier)
 	} else {
 		g.specListMap[name] = sl.NewSpecList(name, 100000, sl.SearchEngineCommon, sl.CommonNameVerifier)
 	}
-
 	return nil
 }
 
@@ -123,7 +125,7 @@ func (g *GroupManager) RecreateGroup(name string, params cf.GroupParams) { // Ч
 		bk.NewQueyeBuckets,
 	)
 	if name == "ip" {
-		g.specListMap[name] = sl.NewSpecList(name, 100000, sl.SearchEngineIp, sl.SubnetNameVerifier)
+		g.specListMap[name] = sl.NewSpecList(name, 100000, sl.SearchEngineIP, sl.SubnetNameVerifier)
 	} else {
 		g.specListMap[name] = sl.NewSpecList(name, 100000, sl.SearchEngineCommon, sl.CommonNameVerifier)
 	}
@@ -140,7 +142,7 @@ func (g *GroupManager) AddToSpecList(name, id string, isBlack tp.IsBlack) (ok bo
 	if sList, ok := g.specListMap[name]; ok {
 		g.lock.Lock()
 		defer g.lock.Unlock()
-		return sList.AddId(id, isBlack)
+		return sList.AddID(id, isBlack)
 	}
 	return false
 }
@@ -149,7 +151,7 @@ func (g *GroupManager) DelFromSpecList(name, id string) (ok bool) {
 	if sList, ok := g.specListMap[name]; ok {
 		g.lock.Lock()
 		defer g.lock.Unlock()
-		return sList.DelId(id)
+		return sList.DelID(id)
 	}
 	return false
 }
@@ -213,7 +215,7 @@ func (g *GroupManager) GetAllGroupsData() tp.AllGroupsData {
 	groups.LenSList = len(g.specListMap)
 	groups.SpecList = map[string]map[string]tp.IsBlack{}
 	for name, sListManager := range g.specListMap {
-		groups.SpecList[name] = sListManager.GetIdsMap()
+		groups.SpecList[name] = sListManager.GetIDsMap()
 	}
 	return groups
 }

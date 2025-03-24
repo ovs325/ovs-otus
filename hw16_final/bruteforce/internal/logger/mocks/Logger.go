@@ -46,7 +46,8 @@ func (_m *Logger) Warning(msg string, args ...interface{}) {
 func NewLogger(t interface {
 	mock.TestingT
 	Cleanup(func())
-}) *Logger {
+},
+) *Logger {
 	mock := &Logger{}
 	mock.Mock.Test(t)
 

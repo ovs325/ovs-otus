@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	tp "bruteforce/internal/types"
-
 	"github.com/stretchr/testify/assert"
 )
 
@@ -24,7 +23,7 @@ func TestSearchEngineIp(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		isFound, isBlack, err := SearchEngineIp(subnetMap, test.ipStr)
+		isFound, isBlack, err := SearchEngineIP(subnetMap, test.ipStr)
 
 		assert.Falsef(
 			t,

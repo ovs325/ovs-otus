@@ -6,17 +6,15 @@ import (
 	"testing"
 	"time"
 
-	sr "bruteforce/internal"
+	tm "bruteforce/internal"
 	bk "bruteforce/internal/bucket"
 	gr "bruteforce/internal/group"
-
 	"github.com/stretchr/testify/assert"
 )
 
 var (
 	msgErrSetElp = "сдвиг времени установился не правильно"
 	msgErrDeadL  = "DeadLine is bad"
-	msgErrDropS  = "DropsSum is bad"
 )
 
 func TestNewGroup(t *testing.T) {
@@ -35,9 +33,9 @@ func TestNewGroup(t *testing.T) {
 }
 
 func TestGroupSimpleOk(t *testing.T) {
-	sr.GetNowMu.Lock()
-	sr.GetNow = func() time.Time { return sr.Start.Add(sr.GetElapsed()) }
-	sr.GetNowMu.Unlock()
+	tm.GetNowMu.Lock()
+	tm.GetNow = func() time.Time { return tm.Start.Add(tm.GetElapsed()) }
+	tm.GetNowMu.Unlock()
 
 	rate := 1.0
 	capacity := int64(5)
@@ -47,36 +45,36 @@ func TestGroupSimpleOk(t *testing.T) {
 	group := gr.NewBucketGroup(rate, capacity, int64(capMap), bucket, false, bk.NewBucket, bk.NewQueyeBuckets)
 
 	simple := func() {
-		sr.SetElapsed(0)
+		tm.SetElapsed(0)
 		capacity = int64(5)
 		drops := int64(1)
 		assert.Equal(t, drops, group.AddDrops(id, drops))                             // "add"
-		sr.SetElapsed(time.Nanosecond)                                                // "time-set"
-		assert.Equal(t, time.Nanosecond, sr.GetElapsed(), msgErrSetElp)               // "time-set"
+		tm.SetElapsed(time.Nanosecond)                                                // "time-set"
+		assert.Equal(t, time.Nanosecond, tm.GetElapsed(), msgErrSetElp)               // "time-set"
 		deadLine, ok := group.GetDeadLine(id)                                         // "till"
 		assert.True(t, ok)                                                            // "till"
 		assert.Equal(t, time.Second-time.Nanosecond, deadLine, msgErrDeadL)           // "till"
-		sr.SetElapsed(time.Second - time.Nanosecond)                                  // "time-set"
-		assert.Equal(t, time.Second-time.Nanosecond, sr.GetElapsed(), msgErrSetElp)   // "time-set"
+		tm.SetElapsed(time.Second - time.Nanosecond)                                  // "time-set"
+		assert.Equal(t, time.Second-time.Nanosecond, tm.GetElapsed(), msgErrSetElp)   // "time-set"
 		deadLine, ok = group.GetDeadLine(id)                                          // "till"
 		assert.True(t, ok)                                                            // "till"
 		assert.Equal(t, time.Nanosecond, deadLine, msgErrDeadL)                       // "till"
-		sr.SetElapsed(time.Second)                                                    // "time-set"
-		assert.Equal(t, time.Second, sr.GetElapsed(), msgErrSetElp)                   // "time-set"
+		tm.SetElapsed(time.Second)                                                    // "time-set"
+		assert.Equal(t, time.Second, tm.GetElapsed(), msgErrSetElp)                   // "time-set"
 		deadLine, ok = group.GetDeadLine(id)                                          // "till"
 		assert.True(t, ok)                                                            // "till"
 		assert.Equal(t, time.Duration(0), deadLine, msgErrDeadL)                      // "till"
 		assert.Equal(t, drops, group.AddDrops(id, drops))                             // "add"
-		sr.AddToElapsed(time.Second / 2)                                              // "time-add"
-		assert.Equal(t, time.Second*3/2, sr.GetElapsed(), msgErrSetElp)               // "time-add"
+		tm.AddToElapsed(time.Second / 2)                                              // "time-add"
+		assert.Equal(t, time.Second*3/2, tm.GetElapsed(), msgErrSetElp)               // "time-add"
 		deadLine, ok = group.GetDeadLine(id)                                          // "till"
 		assert.True(t, ok)                                                            // "till"
 		assert.Equal(t, time.Second/2, deadLine, msgErrDeadL)                         // "till"
 		assert.Equal(t, drops, group.AddDrops(id, drops))                             // "add"
-		sr.AddToElapsed(time.Second/2 - time.Nanosecond)                              // "time-add"
-		assert.Equal(t, time.Second*2-time.Nanosecond, sr.GetElapsed(), msgErrSetElp) // "time-add"
-		sr.AddToElapsed(time.Second * 5)                                              // "time-add"
-		assert.Equal(t, 7*time.Second-time.Nanosecond, sr.GetElapsed(), msgErrSetElp) // "time-add"
+		tm.AddToElapsed(time.Second/2 - time.Nanosecond)                              // "time-add"
+		assert.Equal(t, time.Second*2-time.Nanosecond, tm.GetElapsed(), msgErrSetElp) // "time-add"
+		tm.AddToElapsed(time.Second * 5)                                              // "time-add"
+		assert.Equal(t, 7*time.Second-time.Nanosecond, tm.GetElapsed(), msgErrSetElp) // "time-add"
 		drops = int64(6)                                                              // "add"
 		realAddDrops := group.AddDrops(id, drops)                                     // "add"
 		assert.NotEqual(t, drops, realAddDrops)                                       // "add"
@@ -95,7 +93,7 @@ func TestGroupSimpleOk(t *testing.T) {
 	// Тестируем RemooveEmptyDrops() - удаление пустых корзин
 	simple()
 	group.RemooveEmpty()
-	sr.SetElapsed(time.Hour)
+	tm.SetElapsed(time.Hour)
 	group.RemooveEmpty()
 
 	// Тестируем Reset().
@@ -118,9 +116,9 @@ func TestGroupSimpleOk(t *testing.T) {
 }
 
 func TestGroupVariedOk(t *testing.T) {
-	sr.GetNowMu.Lock()
-	sr.GetNow = func() time.Time { return sr.Start.Add(sr.GetElapsed()) }
-	sr.GetNowMu.Unlock()
+	tm.GetNowMu.Lock()
+	tm.GetNow = func() time.Time { return tm.Start.Add(tm.GetElapsed()) }
+	tm.GetNowMu.Unlock()
 	rate := 60.0
 	capacity := int64(1000)
 	id := "127.0.0.1"
@@ -129,16 +127,16 @@ func TestGroupVariedOk(t *testing.T) {
 	group := gr.NewBucketGroup(rate, capacity, int64(capMap), bucket, false, bk.NewBucket, bk.NewQueyeBuckets)
 
 	varied := func() {
-		sr.SetElapsed(0)
+		tm.SetElapsed(0)
 		capacity = int64(1000)
 		drops := int64(100)
 		assert.Equal(t, drops, group.AddDrops(id, drops))               // "add"
-		sr.SetElapsed(time.Nanosecond)                                  // "time-set"
-		assert.Equal(t, time.Nanosecond, sr.GetElapsed(), msgErrSetElp) // "time-set"
+		tm.SetElapsed(time.Nanosecond)                                  // "time-set"
+		assert.Equal(t, time.Nanosecond, tm.GetElapsed(), msgErrSetElp) // "time-set"
 		assert.Equal(t, int64(900), group.AddDrops(id, int64(1000)))    // "add"
 		assert.Equal(t, int64(0), group.AddDrops(id, int64(1)))         // "add
-		sr.SetElapsed(time.Second)                                      // "time-set"
-		assert.Equal(t, time.Second, sr.GetElapsed(), msgErrSetElp)     // "time-set"
+		tm.SetElapsed(time.Second)                                      // "time-set"
+		assert.Equal(t, time.Second, tm.GetElapsed(), msgErrSetElp)     // "time-set"
 		dropSum, ok := group.GetDropsSum(id)
 		assert.True(t, ok)
 		assert.Equal(t, int64(940), dropSum)
@@ -153,7 +151,7 @@ func TestGroupVariedOk(t *testing.T) {
 	// Тестируем RemooveEmptyDrops() - удаление пустых корзин
 	varied()
 	group.RemooveEmpty()
-	sr.SetElapsed(time.Hour)
+	tm.SetElapsed(time.Hour)
 	group.RemooveEmpty()
 
 	// Тестируем Reset().
@@ -176,7 +174,7 @@ func TestGroupVariedOk(t *testing.T) {
 }
 
 func TestPeriodicPrune(t *testing.T) {
-	sr.SetElapsed(0)
+	tm.SetElapsed(0)
 	id := "localhost"
 
 	capMap := 4096
@@ -189,7 +187,7 @@ func TestPeriodicPrune(t *testing.T) {
 
 	// Wait for the periodic prune.
 	time.Sleep(time.Millisecond)
-	sr.SetElapsed(time.Millisecond)
+	tm.SetElapsed(time.Millisecond)
 
 	dropSum, _ := group.GetDropsSum(id)
 	assert.Zerof(t, dropSum, "Key's bucket is not empty: %d?!", dropSum)
@@ -199,9 +197,9 @@ func TestPeriodicPrune(t *testing.T) {
 
 func TestMain(m *testing.M) {
 	// Выдает значение стартового времени + сдвиг Elapsed
-	sr.GetNowMu.Lock()
-	sr.GetNow = func() time.Time { return sr.Start.Add(sr.GetElapsed()) }
-	sr.GetNowMu.Unlock()
+	tm.GetNowMu.Lock()
+	tm.GetNow = func() time.Time { return tm.Start.Add(tm.GetElapsed()) }
+	tm.GetNowMu.Unlock()
 
 	os.Exit(m.Run())
 }

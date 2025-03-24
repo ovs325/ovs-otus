@@ -4,4 +4,4 @@ import (
 	cf "bruteforce/config"
 )
 
-var ConfigHttp cf.HTTPServerConf
+var ConfigHTTP cf.HTTPServerConf

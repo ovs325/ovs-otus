@@ -33,7 +33,11 @@ default:
   leakageRate: 0.5
 `
 	configPath := filepath.Join(tempDir, "config.yaml")
-	assert.Nil(t, os.WriteFile(configPath, []byte(configContent), 0644), "failed to write config file")
+	assert.Nil(
+		t,
+		os.WriteFile(configPath, []byte(configContent), 0o644),
+		"failed to write config file",
+	)
 
 	// Загружаем конфигурацию
 	config, err := LoadConfig(tempDir)
