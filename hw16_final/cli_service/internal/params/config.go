@@ -4,4 +4,4 @@ import (
 	cf "main/config"
 )
 
-var ConfigHttp cf.HTTPServerConf
+var ConfigHTTP cf.HTTPServerConf

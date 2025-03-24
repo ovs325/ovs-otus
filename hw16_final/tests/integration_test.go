@@ -3,6 +3,7 @@ package tests
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -15,11 +16,11 @@ import (
 )
 
 const (
-	IMAGE_NAME           = "bruteforce_service"
-	CONTAINER_NAME       = IMAGE_NAME + "_container"
-	HOST_BRUTEFORCE_PORT = "3009"
-	BASE_URL             = `http://bruteforce_service_tst:` + HOST_BRUTEFORCE_PORT
-	RUN_BRUTEFORCE       = false
+	ImageName          = "bruteforce_service"
+	ContainerName      = ImageName + "_container"
+	HostBruteforcePort = "3009"
+	BaseURL            = `http://bruteforce_service_tst:` + HostBruteforcePort
+	RunBruteforce      = false
 )
 
 type ResponseErr struct {
@@ -31,8 +32,18 @@ type IntegrationTest struct {
 }
 
 func (suite *IntegrationTest) SetupSuite() {
-	if RUN_BRUTEFORCE {
-		cmd := exec.Command("docker", "run", "-d", "--rm", "-p", HOST_BRUTEFORCE_PORT+":3009", "--name", CONTAINER_NAME, IMAGE_NAME)
+	if RunBruteforce {
+		cmd := exec.Command(
+			"docker",
+			"run",
+			"-d",
+			"--rm",
+			"-p",
+			HostBruteforcePort+":3009",
+			"--name",
+			ContainerName,
+			ImageName,
+		)
 		err := cmd.Run()
 		suite.NoError(err)
 		time.Sleep(5 * time.Second) // Ожидание запуска
@@ -40,15 +51,15 @@ func (suite *IntegrationTest) SetupSuite() {
 }
 
 func (suite *IntegrationTest) TearDownSuite() {
-	if RUN_BRUTEFORCE {
-		cmd := exec.Command("docker", "stop", CONTAINER_NAME)
+	if RunBruteforce {
+		cmd := exec.Command("docker", "stop", ContainerName)
 		err := cmd.Run()
 		suite.NoError(err)
 	}
 }
 
 func (suite *IntegrationTest) TestIsAllowedHandler_Ok() {
-	url, err := url.JoinPath(BASE_URL, "is_allowed")
+	url, err := url.JoinPath(BaseURL, "is_allowed")
 	suite.NoError(err)
 
 	body := map[string]interface{}{
@@ -61,7 +72,7 @@ func (suite *IntegrationTest) TestIsAllowedHandler_Ok() {
 
 	jsonBody, err := json.Marshal(body)
 	suite.NoError(err)
-	req, err := http.NewRequest("PATCH", url, bytes.NewBuffer(jsonBody))
+	req, err := http.NewRequestWithContext(context.Background(), "PATCH", url, bytes.NewBuffer(jsonBody))
 	suite.NoError(err)
 
 	client := &http.Client{}
@@ -82,7 +93,7 @@ func (suite *IntegrationTest) TestIsAllowedHandler_Ok() {
 }
 
 func (suite *IntegrationTest) TestIsAllowedHandler_InvalidParams() {
-	url, err := url.JoinPath(BASE_URL, "is_allowed")
+	url, err := url.JoinPath(BaseURL, "is_allowed")
 	suite.NoError(err)
 
 	// Некорректное тело запроса
@@ -91,7 +102,7 @@ func (suite *IntegrationTest) TestIsAllowedHandler_InvalidParams() {
 	jsonBody, err := json.Marshal(bodyErr)
 	suite.NoError(err)
 
-	req, err := http.NewRequest("PATCH", url, bytes.NewBuffer(jsonBody))
+	req, err := http.NewRequestWithContext(context.Background(), "PATCH", url, bytes.NewBuffer(jsonBody))
 	suite.NoError(err)
 
 	client := &http.Client{}
@@ -112,10 +123,10 @@ func (suite *IntegrationTest) TestIsAllowedHandler_InvalidParams() {
 }
 
 func (suite *IntegrationTest) TestResetBucketHandler_Ok() {
-	url_, err := url.JoinPath(BASE_URL, "reset")
+	urlRaw, err := url.JoinPath(BaseURL, "reset")
 	suite.NoError(err)
 
-	reqURL, err := url.Parse(url_)
+	reqURL, err := url.Parse(urlRaw)
 	suite.NoError(err)
 
 	// Add the query parameter
@@ -123,7 +134,7 @@ func (suite *IntegrationTest) TestResetBucketHandler_Ok() {
 	query.Add("params", "ip^137.23.45.111")
 	reqURL.RawQuery = query.Encode()
 
-	req, err := http.NewRequest("PATCH", reqURL.String(), nil)
+	req, err := http.NewRequestWithContext(context.Background(), "PATCH", reqURL.String(), nil)
 	suite.NoError(err)
 
 	client := &http.Client{}
@@ -135,17 +146,17 @@ func (suite *IntegrationTest) TestResetBucketHandler_Ok() {
 }
 
 func (suite *IntegrationTest) TestResetBucketHandler_InvalidParams() {
-	url_, err := url.JoinPath(BASE_URL, "reset")
+	urlRaw, err := url.JoinPath(BaseURL, "reset")
 	suite.NoError(err)
 
-	reqURL, err := url.Parse(url_)
+	reqURL, err := url.Parse(urlRaw)
 	suite.NoError(err)
 
 	query := reqURL.Query()
 	query.Add("params", "invalid_param")
 	reqURL.RawQuery = query.Encode()
 
-	req, err := http.NewRequest("PATCH", reqURL.String(), nil)
+	req, err := http.NewRequestWithContext(context.Background(), "PATCH", reqURL.String(), nil)
 	suite.NoError(err)
 
 	client := &http.Client{}
@@ -162,10 +173,10 @@ func (suite *IntegrationTest) TestResetBucketHandler_InvalidParams() {
 }
 
 func (suite *IntegrationTest) TestAddToBlacklistHandler_Ok() {
-	url, err := url.JoinPath(BASE_URL, "add/black")
+	url, err := url.JoinPath(BaseURL, "add/black")
 	suite.NoError(err)
 
-	req, err := http.NewRequest("PATCH", url, nil)
+	req, err := http.NewRequestWithContext(context.Background(), "PATCH", url, nil)
 	q := req.URL.Query()
 	q.Add("network", "137.23.45.167/25")
 	req.URL.RawQuery = q.Encode()
@@ -180,10 +191,10 @@ func (suite *IntegrationTest) TestAddToBlacklistHandler_Ok() {
 }
 
 func (suite *IntegrationTest) TestAddToBlacklistHandler_InvalidParams() {
-	url, err := url.JoinPath(BASE_URL, "add/black")
+	url, err := url.JoinPath(BaseURL, "add/black")
 	suite.NoError(err)
 
-	req, err := http.NewRequest("PATCH", url, nil)
+	req, err := http.NewRequestWithContext(context.Background(), "PATCH", url, nil)
 	q := req.URL.Query()
 	q.Add("errNetwork", "137.23.45.167/25")
 	req.URL.RawQuery = q.Encode()
@@ -203,10 +214,10 @@ func (suite *IntegrationTest) TestAddToBlacklistHandler_InvalidParams() {
 }
 
 func (suite *IntegrationTest) TestAddToWhitelistHandler_Ok() {
-	url, err := url.JoinPath(BASE_URL, "add/white")
+	url, err := url.JoinPath(BaseURL, "add/white")
 	suite.NoError(err)
 
-	req, err := http.NewRequest("PATCH", url, nil)
+	req, err := http.NewRequestWithContext(context.Background(), "PATCH", url, nil)
 	q := req.URL.Query()
 	q.Add("network", "137.23.45.168/25")
 	req.URL.RawQuery = q.Encode()
@@ -221,10 +232,10 @@ func (suite *IntegrationTest) TestAddToWhitelistHandler_Ok() {
 }
 
 func (suite *IntegrationTest) TestAddToWhitelistHandler_InvalidParams() {
-	url, err := url.JoinPath(BASE_URL, "add/white")
+	url, err := url.JoinPath(BaseURL, "add/white")
 	suite.NoError(err)
 
-	req, err := http.NewRequest("PATCH", url, nil)
+	req, err := http.NewRequestWithContext(context.Background(), "PATCH", url, nil)
 	q := req.URL.Query()
 	q.Add("errNetwork", "137.23.45.168/25")
 	req.URL.RawQuery = q.Encode()
@@ -244,10 +255,10 @@ func (suite *IntegrationTest) TestAddToWhitelistHandler_InvalidParams() {
 }
 
 func (suite *IntegrationTest) TestDelFromBlacklistHandler_Ok() {
-	url, err := url.JoinPath(BASE_URL, "del/black")
+	url, err := url.JoinPath(BaseURL, "del/black")
 	suite.NoError(err)
 
-	req, err := http.NewRequest("DELETE", url, nil)
+	req, err := http.NewRequestWithContext(context.Background(), "DELETE", url, nil)
 	q := req.URL.Query()
 	q.Add("network", "137.23.45.167/25")
 	req.URL.RawQuery = q.Encode()
@@ -262,10 +273,10 @@ func (suite *IntegrationTest) TestDelFromBlacklistHandler_Ok() {
 }
 
 func (suite *IntegrationTest) TestDelFromBlacklistHandler_InvalidParams() {
-	url, err := url.JoinPath(BASE_URL, "del/black")
+	url, err := url.JoinPath(BaseURL, "del/black")
 	suite.NoError(err)
 
-	req, err := http.NewRequest("DELETE", url, nil)
+	req, err := http.NewRequestWithContext(context.Background(), "DELETE", url, nil)
 	q := req.URL.Query()
 	q.Add("errNetwork", "137.23.45.167/25")
 	req.URL.RawQuery = q.Encode()
@@ -285,10 +296,10 @@ func (suite *IntegrationTest) TestDelFromBlacklistHandler_InvalidParams() {
 }
 
 func (suite *IntegrationTest) TestDelFromWhitelistHandler_Ok() {
-	url, err := url.JoinPath(BASE_URL, "del/white")
+	url, err := url.JoinPath(BaseURL, "del/white")
 	suite.NoError(err)
 
-	req, err := http.NewRequest("DELETE", url, nil)
+	req, err := http.NewRequestWithContext(context.Background(), "DELETE", url, nil)
 	q := req.URL.Query()
 	q.Add("network", "137.23.45.168/25")
 	req.URL.RawQuery = q.Encode()
@@ -303,10 +314,10 @@ func (suite *IntegrationTest) TestDelFromWhitelistHandler_Ok() {
 }
 
 func (suite *IntegrationTest) TestDelFromWhitelistHandler_InvalidParams() {
-	url, err := url.JoinPath(BASE_URL, "del/white")
+	url, err := url.JoinPath(BaseURL, "del/white")
 	suite.NoError(err)
 
-	req, err := http.NewRequest("DELETE", url, nil)
+	req, err := http.NewRequestWithContext(context.Background(), "DELETE", url, nil)
 	q := req.URL.Query()
 	q.Add("errNetwork", "137.23.45.168/25")
 	req.URL.RawQuery = q.Encode()
@@ -327,12 +338,18 @@ func (suite *IntegrationTest) TestDelFromWhitelistHandler_InvalidParams() {
 
 func waitForService(url string) {
 	for {
-		// Create a new PATCH request
-		resp, err := http.Get(url)
+		req, err := http.NewRequestWithContext(context.Background(), "GET", url, nil)
+		if err != nil {
+			fmt.Println("Соединение не установлено: %w", err)
+			break // Exit loop if error response is received
+		}
+		client := &http.Client{}
+		resp, err := client.Do(req)
 		if err == nil && resp.StatusCode == http.StatusOK {
 			fmt.Println("Соединение установлено")
 			break // Exit loop if successful response is received
 		}
+		defer resp.Body.Close()
 		if err != nil {
 			fmt.Printf("Ожидание соединения: %s \t%v\n", url, err)
 		} else {
@@ -342,6 +359,6 @@ func waitForService(url string) {
 	}
 }
 func TestIntegrationTestSuite(t *testing.T) {
-	waitForService(BASE_URL + "/ok")
+	waitForService(BaseURL + "/ok")
 	suite.Run(t, new(IntegrationTest))
 }

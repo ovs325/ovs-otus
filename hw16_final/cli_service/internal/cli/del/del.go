@@ -3,12 +3,12 @@ package del
 import (
 	"errors"
 	"fmt"
-	"main/internal/cli/del/black"
-	"main/internal/cli/del/white"
 	"slices"
 	"strings"
 
 	cb "github.com/spf13/cobra"
+	"main/internal/cli/del/black"
+	"main/internal/cli/del/white"
 )
 
 var DelCmd = &cb.Command{
@@ -16,7 +16,7 @@ var DelCmd = &cb.Command{
 	Short: "Удаление Сети/Подсети из белого или черного листа",
 	Long:  "Команда удаления Сети/Подсети  из белого или черного списка",
 
-	RunE: func(cmd *cb.Command, args []string) error {
+	RunE: func(_ *cb.Command, args []string) error {
 		if len(args) == 0 {
 			return errors.New("отсутствует подкоманды для команды 'del'")
 		}

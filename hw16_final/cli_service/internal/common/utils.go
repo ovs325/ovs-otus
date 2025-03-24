@@ -1,6 +1,7 @@
 package common
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"net/http"
@@ -8,7 +9,7 @@ import (
 
 func NewRequest(method string, url string, body io.Reader) error {
 	client := &http.Client{}
-	req, err := http.NewRequest(method, url, body) // data теперь nil
+	req, err := http.NewRequestWithContext(context.Background(), method, url, body) // data теперь nil
 	if err != nil {
 		return err
 	}

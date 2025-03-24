@@ -2,16 +2,14 @@ package cli
 
 import (
 	"fmt"
+	"os"
+
+	cb "github.com/spf13/cobra"
+	cf "main/config"
 	"main/internal/cli/add"
 	"main/internal/cli/del"
 	"main/internal/cli/reset"
-	"os"
-
-	cf "main/config"
-
 	pr "main/internal/params"
-
-	cb "github.com/spf13/cobra"
 )
 
 const configPath = "./"
@@ -24,7 +22,7 @@ var rootCmd = &cb.Command{
 
 func Execute() {
 	config, err := cf.LoadConfig(configPath)
-	pr.ConfigHttp = config.HTTPServer
+	pr.ConfigHTTP = config.HTTPServer
 	if err != nil {
 		fmt.Printf("failed to load config: %s", err.Error())
 	}
@@ -33,7 +31,7 @@ func Execute() {
 	rootCmd.AddCommand(del.DelCmd)
 
 	if err := rootCmd.Execute(); err != nil {
-		fmt.Println(os.Stdout, err)
+		fmt.Println(err)
 		os.Exit(1)
 	}
 }

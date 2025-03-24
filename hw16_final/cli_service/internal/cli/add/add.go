@@ -3,12 +3,12 @@ package add
 import (
 	"errors"
 	"fmt"
-	"main/internal/cli/add/black"
-	"main/internal/cli/add/white"
 	"slices"
 	"strings"
 
 	cb "github.com/spf13/cobra"
+	"main/internal/cli/add/black"
+	"main/internal/cli/add/white"
 )
 
 var AddCmd = &cb.Command{
@@ -16,7 +16,7 @@ var AddCmd = &cb.Command{
 	Short: "Добавление Сети/Подсети в белый или черный лист",
 	Long:  "Команда добавление Сети/Подсети в белый или черный список",
 
-	RunE: func(cmd *cb.Command, args []string) error {
+	RunE: func(_ *cb.Command, args []string) error {
 		if len(args) == 0 {
 			return errors.New("отсутствует подкоманды для команды 'add'")
 		}
